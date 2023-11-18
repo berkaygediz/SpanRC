@@ -71,6 +71,7 @@ class SRC_Workbook(QMainWindow):
     def __init__(self, parent=None):
         super(SRC_Workbook, self).__init__(parent)
         starttime = datetime.datetime.now()
+        settings = QSettings("berkaygediz", "SpanRC")
         self.undo_stack = QUndoStack(self)
         self.undo_stack.setUndoLimit(100)
         self.src_thread = SRC_Threading()
@@ -113,6 +114,10 @@ class SRC_Workbook(QMainWindow):
         self.is_saved = None
         self.default_directory = QDir().homePath()
         self.directory = self.default_directory
+        if settings.value("current_language") == None:
+            settings.setValue("current_language", "English")
+            settings.sync()
+        self.language = settings.value("current_language")
         self.SRC_setupDock()
         self.status_bar = self.statusBar()
         self.src_table = QTableWidget(self)
@@ -200,7 +205,7 @@ class SRC_Workbook(QMainWindow):
             ".highlight {background-color: #E2E3E1; color: #000000}"
             "tr:hover {background-color: #ddd;}"
             "th {background-color: #4CAF50; color: white;}"
-            "#sr-text { background-color: #E2E3E1; color: #000000; }"
+            "#sr-text { background-color: #E2E3E1; color: #000000; font-weight: bold;}"
             "</style></head><body>"
             "<table><tr>"
             f"<th>{translations[settings.value('current_language')]['statistics_title']}</th>"
