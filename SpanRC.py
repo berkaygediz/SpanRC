@@ -1163,5 +1163,6 @@ if __name__ == "__main__":
     app.setApplicationName('SpanRC')
     app.setApplicationDisplayName('SpanRC')
     app.setApplicationVersion('1.3.0')
-    SRC_ControlInfo().show()
+    ci = SRC_ControlInfo()
+    ci.show()
     sys.exit(app.exec_())
