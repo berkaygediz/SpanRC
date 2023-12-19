@@ -555,19 +555,25 @@ class SRC_Workbook(QMainWindow):
             "#sr-text { background-color: #E2E3E1; color: #000000; font-weight: bold;}"
             "</style></head><body>"
             "<table><tr>"
-            f"<th>{translations[settings.value('current_language')]['statistics_title']}</th>"
+            f"<th>{translations[settings.value(
+                'current_language')]['statistics_title']}</th>"
         )
-        statistics += f"<td>{translations[settings.value('current_language')]['statistics_message1']}</td><td>{row}</td><td>Cols: </td><td>{column}</td>"
-        statistics += f"<td>{translations[settings.value('current_language')]['statistics_message2']}</td><td>{selected_cell[0]}:{selected_cell[1]}</td>"
+        statistics += f"<td>{translations[settings.value('current_language')]['statistics_message1']}</td><td>{
+            row}</td><td>Cols: </td><td>{column}</td>"
+        statistics += f"<td>{translations[settings.value('current_language')]['statistics_message2']}</td><td>{
+            selected_cell[0]}:{selected_cell[1]}</td>"
         if self.src_table.selectedRanges():
-            statistics += f"<td>{translations[settings.value('current_language')]['statistics_message3']}</td><td>"
+            statistics += f"<td>{translations[settings.value(
+                'current_language')]['statistics_message3']}</td><td>"
             for selected_range in self.src_table.selectedRanges():
                 statistics += (
                     f"{selected_range.topRow() + 1}:{selected_range.leftColumn() + 1} - "
-                    f"{selected_range.bottomRow() + 1}:{selected_range.rightColumn() + 1}</td>"
+                    f"{selected_range.bottomRow(
+                    ) + 1}:{selected_range.rightColumn() + 1}</td>"
                 )
         else:
-            statistics += f"<td>{translations[settings.value('current_language')]['statistics_message4']}</td><td>{selected_cell[0]}:{selected_cell[1]}</td>"
+            statistics += f"<td>{translations[settings.value('current_language')]['statistics_message4']}</td><td>{
+                selected_cell[0]}:{selected_cell[1]}</td>"
 
         statistics += "</td><td id='sr-text'>SpanRC</td></tr></table></body></html>"
         self.statistics_label.setText(statistics)
@@ -763,14 +769,22 @@ class SRC_Workbook(QMainWindow):
                                 "th {background-color: #4CAF50; color: white;}"
                                 "</style></head><body>"
                                 "<table><tr><th>Shortcut</th><th>Function</th></tr>"
-                                f"<tr><td>Ctrl + N</td><td>{translations[settings.value('current_language')]['new_title']}</td></tr>"
-                                f"<tr><td>Ctrl + O</td><td>{translations[settings.value('current_language')]['open_title']}</td></tr>"
-                                f"<tr><td>Ctrl + S</td><td>{translations[settings.value('current_language')]['save_title']}</td></tr>"
-                                f"<tr><td>Ctrl + Shift + S</td><td>{translations[settings.value('current_language')]['save_as_title']}</td></tr>"
-                                f"<tr><td>Ctrl + P</td><td>{translations[settings.value('current_language')]['print_title']}</td></tr>"
-                                f"<tr><td>Ctrl + Q</td><td>{translations[settings.value('current_language')]['exit_title']}</td></tr>"
-                                f"<tr><td>Ctrl + D</td><td>{translations[settings.value('current_language')]['delete_title']}</td></tr>"
-                                f"<tr><td>Ctrl + A</td><td>{translations[settings.value('current_language')]['about_title']}</td></tr>"
+                                f"<tr><td>Ctrl + N</td><td>{translations[settings.value(
+                                    'current_language')]['new_title']}</td></tr>"
+                                f"<tr><td>Ctrl + O</td><td>{translations[settings.value(
+                                    'current_language')]['open_title']}</td></tr>"
+                                f"<tr><td>Ctrl + S</td><td>{translations[settings.value(
+                                    'current_language')]['save_title']}</td></tr>"
+                                f"<tr><td>Ctrl + Shift + S</td><td>{
+                                    translations[settings.value('current_language')]['save_as_title']}</td></tr>"
+                                f"<tr><td>Ctrl + P</td><td>{translations[settings.value(
+                                    'current_language')]['print_title']}</td></tr>"
+                                f"<tr><td>Ctrl + Q</td><td>{translations[settings.value(
+                                    'current_language')]['exit_title']}</td></tr>"
+                                f"<tr><td>Ctrl + D</td><td>{translations[settings.value(
+                                    'current_language')]['delete_title']}</td></tr>"
+                                f"<tr><td>Ctrl + A</td><td>{translations[settings.value(
+                                    'current_language')]['about_title']}</td></tr>"
                                 "</table></body></html>")
         self.dock_widget.setWidget(self.help_label)
         self.dock_widget.setObjectName('Help')
@@ -1051,7 +1065,8 @@ class SRC_Workbook(QMainWindow):
         options = QFileDialog.Options()
         settings = QSettings("berkaygediz", "SpanRC")
         options |= QFileDialog.ReadOnly
-        file_filter = f"{translations[settings.value('current_language')]['xsrc']} (*.xsrc);;Comma Separated Values (*.csv)"
+        file_filter = f"{translations[settings.value(
+            'current_language')]['xsrc']} (*.xsrc);;Comma Separated Values (*.csv)"
         selected_file, _ = QFileDialog.getSaveFileName(
             self, translations[settings.value("current_language")]["save_as_title"] + " — SpanRC", self.directory, file_filter, options=options)
         if selected_file:
