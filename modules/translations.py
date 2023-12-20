@@ -52,7 +52,9 @@ translations = {
         "wrong_credentials": "Wrong credentials",
         "register_success": "Registration successful, please login.",
         "already_registered": "Already registered",
-        "exit" : "Exit",
+        "exit": "Exit",
+        "compute": "Compute",
+        "account": "Account",
     },
     "Türkçe": {
         "new": "Yeni",
@@ -108,6 +110,8 @@ translations = {
         "register_success": "Kayıt başarılı, lütfen giriş yapın.",
         "already_registered": "Zaten kayıtlı",
         "exit": "Çıkış",
+        "compute": "Hesapla",
+        "account": "Hesap",
     },
     "Azərbaycanca": {
         "new": "Yeni",
@@ -163,6 +167,8 @@ translations = {
         "register_success": "Qeydiyyat uğurlu, xahiş olunur giriş edin.",
         "already_registered": "Artıq qeydiyyatdan keçilib",
         "exit": "Çıxış",
+        "compute": "Hesabla",
+        "account": "Hesab",
     },
     "Deutsch": {
         "new": "Neu",
@@ -218,6 +224,8 @@ translations = {
         "register_success": "Registrierung erfolgreich, bitte anmelden.",
         "already_registered": "Bereits registriert",
         "exit": "Beenden",
+        "compute": "Berechnen",
+        "account": "Konto",
     },
     "Español": {
         "new": "Nuevo",
@@ -273,5 +281,7 @@ translations = {
         "register_success": "Registro correcto, por favor inicie sesión.",
         "already_registered": "Ya registrado",
         "exit": "Salir",
+        "compute": "Calcular",
+        "account": "Cuenta",
     },
 }

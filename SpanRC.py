@@ -110,6 +110,7 @@ class SRC_ControlInfo(QMainWindow, QThread):
         self.label_status.setFont(QFont('Roboto', 10))
         self.layout_central.addWidget(self.label_status)
         self.setCentralWidget(self.widget_central)
+        self.setFocus()
         if serverconnect():
             sqlite_file = os.path.join(os.path.dirname(
                 os.path.abspath(__file__)), 'src.db')
@@ -217,7 +218,7 @@ class SRC_Welcome(QMainWindow):
                 screen
             )
         )
-
+        self.setFocus()
         if settings.value("current_language") == None:
             settings.setValue("current_language", "English")
             settings.sync()
@@ -340,7 +341,11 @@ class SRC_Welcome(QMainWindow):
                     settings.setValue("current_language", "English")
                     settings.sync()
                 QMessageBox.warning(
-                    self, translations[settings.value("current_language")]["error"], translations[settings.value("current_language")]["fill_all"])
+                    None,
+                    translations[settings.value("current_language")]["error"],
+                    translations[settings.value(
+                        "current_language")]["fill_all"]
+                )
             else:
                 mysqlserver = serverconnect()
                 mysqlcursor = mysqlserver.cursor()
@@ -366,12 +371,15 @@ class SRC_Welcome(QMainWindow):
                     sqliteConnection.execute("INSERT INTO profile (email, password) VALUES (?, ?)", (
                         textbox_email.text(), textbox_password.text()))
                     sqliteConnection.connection.commit()
-                    time.sleep(1)
                     textbox_email.setText("")
                     textbox_password.setText("")
                     label_exception.setText("")
+                    try:
+                        SRC_Workbook().close()
+                    except:
+                        pass
                     SRC_Workbook().show()
-                    QTimer.singleShot(1000, self.hide)
+                    QTimer.singleShot(500, self.hide)
                 else:
                     label_exception.setText(
                         translations[settings.value("current_language")]["wrong_credentials"])
@@ -486,6 +494,7 @@ class SRC_Workbook(QMainWindow):
                 self.src_table.setItem(0, 0, QTableWidgetItem(''))
 
             self.SRC_updateTitle()
+            self.setFocus()
             endtime = datetime.datetime.now()
             self.status_bar.showMessage(
                 str((endtime - starttime).total_seconds()) + " ms", 2500)
@@ -522,6 +531,7 @@ class SRC_Workbook(QMainWindow):
         settings = QSettings("berkaygediz", "SpanRC")
         settings.setValue("current_language", language)
         settings.sync()
+        self.SRC_toolbarTranslate()
         self.SRC_updateTitle()
 
     def SRC_updateTitle(self):
@@ -698,59 +708,55 @@ class SRC_Workbook(QMainWindow):
             settings.setValue("current_language", "English")
             settings.sync()
         self.language = settings.value("current_language")
-        self.language = settings.value("current_language")
-        self.file_toolbar.setWindowTitle(
-            translations[settings.value("current_language")]["file"])
-        self.edit_toolbar.setWindowTitle(
-            translations[settings.value("current_language")]["edit"])
-        self.formula_toolbar.setWindowTitle(
-            translations[settings.value("current_language")]["formula"])
-        self.interface_toolbar.setWindowTitle(
-            translations[settings.value("current_language")]["interface"])
-        self.newAction.setText(
-            translations[settings.value("current_language")]["new"])
-        self.newAction.setStatusTip(
-            translations[settings.value("current_language")]["new_title"])
-        self.openAction.setText(
-            translations[settings.value("current_language")]["open"])
-        self.openAction.setStatusTip(
-            translations[settings.value("current_language")]["open_title"])
-        self.saveAction.setText(
-            translations[settings.value("current_language")]["save"])
-        self.saveAction.setStatusTip(
-            translations[settings.value("current_language")]["save_title"])
-        self.saveasAction.setText(
-            translations[settings.value("current_language")]["save_as"])
-        self.saveasAction.setStatusTip(
-            translations[settings.value("current_language")]["save_as_title"])
-        self.printAction.setText(
-            translations[settings.value("current_language")]["print"])
-        self.printAction.setStatusTip(
-            translations[settings.value("current_language")]["print_title"])
-        self.exitAction.setText(
-            translations[settings.value("current_language")]["exit"])
-        self.exitAction.setStatusTip(
-            translations[settings.value("current_language")]["exit_message"])
-        self.deleteAction.setText(
-            translations[settings.value("current_language")]["delete"])
-        self.deleteAction.setStatusTip(
-            translations[settings.value("current_language")]["delete_title"])
-        self.aboutAction.setText(
-            translations[settings.value("current_language")]["about"])
-        self.aboutAction.setStatusTip(
-            translations[settings.value("current_language")]["about_title"])
-        self.undoAction.setText(
-            translations[settings.value("current_language")]["undo"])
-        self.undoAction.setStatusTip(
-            translations[settings.value("current_language")]["undo_title"])
-        self.redoAction.setText(
-            translations[settings.value("current_language")]["redo"])
-        self.redoAction.setStatusTip(
-            translations[settings.value("current_language")]["redo_title"])
-        self.darklightAction.setText(
-            translations[settings.value("current_language")]["darklight"])
-        self.darklightAction.setStatusTip(
-            translations[settings.value("current_language")]["darklight_message"])
+        self.newAction.setText(translations[settings.value(
+            "current_language")]["new"])
+        self.newAction.setStatusTip(translations[settings.value(
+            "current_language")]["new_title"])
+        self.openAction.setText(translations[settings.value(
+            "current_language")]["open"])
+        self.openAction.setStatusTip(translations[settings.value(
+            "current_language")]["open_title"])
+        self.saveAction.setText(translations[settings.value(
+            "current_language")]["save"])
+        self.saveAction.setStatusTip(translations[settings.value(
+            "current_language")]["save_title"])
+        self.saveasAction.setText(translations[settings.value(
+            "current_language")]["save_as"])
+        self.saveasAction.setStatusTip(translations[settings.value(
+            "current_language")]["save_as_title"])
+        self.printAction.setText(translations[settings.value(
+            "current_language")]["print"])
+        self.printAction.setStatusTip(translations[settings.value(
+            "current_language")]["print_title"])
+        self.exitAction.setText(translations[settings.value(
+            "current_language")]["exit"])
+        self.exitAction.setStatusTip(translations[settings.value(
+            "current_language")]["exit_title"])
+        self.deleteAction.setText(translations[settings.value(
+            "current_language")]["delete"])
+        self.deleteAction.setStatusTip(translations[settings.value(
+            "current_language")]["delete_title"])
+        self.aboutAction.setText(translations[settings.value(
+            "current_language")]["about"])
+        self.aboutAction.setStatusTip(translations[settings.value(
+            "current_language")]["about_title"])
+        self.undoAction.setText(translations[settings.value(
+            "current_language")]["undo"])
+        self.undoAction.setStatusTip(translations[settings.value(
+            "current_language")]["undo_title"])
+        self.redoAction.setText(translations[settings.value(
+            "current_language")]["redo"])
+        self.redoAction.setStatusTip(translations[settings.value(
+            "current_language")]["redo_title"])
+        self.darklightAction.setText(translations[settings.value(
+            "current_language")]["darklight"])
+        self.darklightAction.setStatusTip(translations[settings.value(
+            "current_language")]["darklight_message"])
+        self.logoutaction.setText(translations[settings.value(
+            "current_language")]["logout"])
+        self.syncsettingsaction.setText(translations[settings.value(
+            "current_language")]["syncsettings"])
+        self.SRC_updateTitle()
 
     def SRC_setupDock(self):
         settings = QSettings("berkaygediz", "SpanRC")
@@ -868,21 +874,25 @@ class SRC_Workbook(QMainWindow):
     def logout(self):
         sqlite_file = os.path.join(os.path.dirname(
             os.path.abspath(__file__)), 'src.db')
-        sqliteConnection = sqlite3.connect(sqlite_file).cursor()
-        sqliteConnection.execute("DROP TABLE profile")
-        sqliteConnection.connection.commit()
-        sqliteConnection.execute("DROP TABLE apps")
-        sqliteConnection.connection.commit()
-        sqliteConnection.execute("DROP TABLE log")
-        sqliteConnection.connection.commit()
         try:
+            sqliteConnection = sqlite3.connect(sqlite_file)
+            sqliteCursor = sqliteConnection.cursor()
+
+            sqliteCursor.execute("DROP TABLE IF EXISTS profile")
+            sqliteCursor.execute("DROP TABLE IF EXISTS apps")
+            sqliteCursor.execute("DROP TABLE IF EXISTS log")
+
+            sqliteConnection.commit()
+            sqliteConnection.close()
+
             settings = QSettings("berkaygediz", "SpanRC")
             settings.clear()
             settings.sync()
-        except:
-            pass
-        QTimer.singleShot(0, self.hide)
-        QTimer.singleShot(750, SRC_ControlInfo().show)
+        except Exception as e:
+            print("Error during logout:", e)
+
+        QTimer.singleShot(0, SRC_ControlInfo().show)
+        self.close()
 
     def SRC_setupToolbar(self):
         settings = QSettings("berkaygediz", "SpanRC")
@@ -910,6 +920,7 @@ class SRC_Workbook(QMainWindow):
             "current_language")]["formula"] + ": ")
         self.formula_edit = QLineEdit(self)
         self.formula_edit.returnPressed.connect(self.calculateFormula)
+
         if self.palette() == self.light_theme:
             self.formula_edit.setStyleSheet(
                 "background-color: rgb(239, 213, 195); color: #000000")
@@ -922,6 +933,12 @@ class SRC_Workbook(QMainWindow):
                 "background-color: rgb(58, 68, 93); color: #FFFFFF")
 
         self.formula_toolbar.addWidget(self.formula_edit)
+        self.calculate_button = QPushButton(
+            translations[settings.value("current_language")]["compute"])
+        self.calculate_button.setStyleSheet(
+            "background-color: #A72461; color: #FFFFFF; font-weight: bold; padding: 10px; border-radius: 10px; border: 1px solid #000000;")
+        self.calculate_button.clicked.connect(self.calculateFormula)
+        self.formula_toolbar.addWidget(self.calculate_button)
 
         self.interface_toolbar = self.addToolBar(
             translations[settings.value("current_language")]["interface"])
@@ -938,8 +955,9 @@ class SRC_Workbook(QMainWindow):
             self.SRC_changeLanguage)
         self.interface_toolbar.addWidget(self.language_combobox)
 
-        self.toolbar = self.addToolBar("Account")
-        self.SRC_toolbarLabel(self.toolbar, "Account: ")
+        self.account_toolbar = self.addToolBar("Account")
+        self.SRC_toolbarLabel(self.account_toolbar, translations[settings.value(
+            "current_language")]["account"] + ": ")
         sqlite_file = os.path.join(os.path.dirname(
             os.path.abspath(__file__)), 'src.db')
         sqliteConnection = sqlite3.connect(sqlite_file).cursor()
@@ -947,9 +965,9 @@ class SRC_Workbook(QMainWindow):
             "SELECT email FROM profile").fetchone()[0]
         self.user_name = QLabel(user_email)
         self.user_name.setStyleSheet("color: #000000;")
-        self.toolbar.addWidget(self.user_name)
-        self.toolbar.addAction(self.logoutaction)
-        self.toolbar.addAction(self.syncsettingsaction)
+        self.account_toolbar.addWidget(self.user_name)
+        self.account_toolbar.addAction(self.logoutaction)
+        self.account_toolbar.addAction(self.syncsettingsaction)
         self.addToolBarBreak()
 
     def SRC_createDockwidget(self):
