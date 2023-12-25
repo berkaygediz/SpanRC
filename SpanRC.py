@@ -1053,6 +1053,18 @@ class SRC_Workbook(QMainWindow):
         actionicon = qta.icon('fa5s.trash-alt', color=icon_theme)
         self.deleteAction = self.SRC_createAction(
             translations[current_language]["delete"], translations[current_language]["delete_title"], self.deletecell, QKeySequence.Delete, actionicon)
+        actionicon = qta.icon('fa5s.plus', color=icon_theme)
+        self.addrowAction = self.SRC_createAction(
+            translations[current_language]["add_row"], translations[current_language]["add_row_title"], self.addrow, QKeySequence("Ctrl+Shift+R"), actionicon)
+        actionicon = qta.icon('fa5s.plus', color=icon_theme)
+        self.addcolumnAction = self.SRC_createAction(
+            translations[current_language]["add_column"], translations[current_language]["add_column_title"], self.addcolumn, QKeySequence("Ctrl+Shift+C"), actionicon)
+        actionicon = qta.icon('fa5s.plus', color=icon_theme)
+        self.addrowaboveAction = self.SRC_createAction(
+            translations[current_language]["add_row_above"], translations[current_language]["add_row_above_title"], self.addrowabove, QKeySequence("Ctrl+Shift+T"), actionicon)
+        actionicon = qta.icon('fa5s.plus', color=icon_theme)
+        self.addcolumnleftAction = self.SRC_createAction(
+            translations[current_language]["add_column_left"], translations[current_language]["add_column_left_title"], self.addcolumnleft, QKeySequence("Ctrl+Shift+L"), actionicon)
         actionicon = qta.icon('fa5s.question-circle', color=icon_theme)
         self.hide_dock_widget_action = self.SRC_createAction(
             translations[current_language]["help"], translations[current_language]["help"], self.SRC_toggleDock, QKeySequence("Ctrl+H"), actionicon)
@@ -1134,7 +1146,7 @@ class SRC_Workbook(QMainWindow):
         self.SRC_toolbarLabel(self.edit_toolbar, translations[settings.value(
             "current_language")]["edit"] + ": ")
         self.edit_toolbar.addActions(
-            [self.undoAction, self.redoAction, self.deleteAction])
+            [self.undoAction, self.redoAction, self.deleteAction, self.addrowAction, self.addcolumnAction, self.addrowaboveAction, self.addcolumnleftAction])
 
         self.interface_toolbar = self.addToolBar(
             translations[settings.value("current_language")]["interface"])
@@ -1230,12 +1242,12 @@ class SRC_Workbook(QMainWindow):
         if self.is_saved == False:
             reply = QMessageBox.question(self, 'SpanRC',
                                          translations[settings.value(
-                                             "current_language")]["new_message"],
+                                             "current_language")]["new_title"], QMessageBox.Yes |
                                          QMessageBox.No, QMessageBox.No)
 
             if reply == QMessageBox.Yes:
                 self.SRC_saveState()
-                self.src_table.clearSpans()
+                self.src_table.clearContents()
                 self.src_table.setRowCount(50)
                 self.src_table.setColumnCount(100)
                 self.is_saved = False
@@ -1247,7 +1259,7 @@ class SRC_Workbook(QMainWindow):
             else:
                 return False
         else:
-            self.src_table.clearSpans()
+            self.src_table.clearContents()
             self.src_table.setRowCount(50)
             self.src_table.setColumnCount(100)
             self.is_saved = False
@@ -1262,7 +1274,7 @@ class SRC_Workbook(QMainWindow):
         if self.is_saved is False:
             reply = QMessageBox.question(self, 'SpanRC',
                                          translations[settings.value(
-                                             "current_language")]["open_message"],
+                                             "current_language")]["open_message"], QMessageBox.Yes |
                                          QMessageBox.No, QMessageBox.No)
 
             if reply == QMessageBox.Yes:
@@ -1334,7 +1346,7 @@ class SRC_Workbook(QMainWindow):
         selected_file, _ = QFileDialog.getSaveFileName(
             self, translations[settings.value("current_language")]["save_as_title"] + " — SpanRC", self.directory, file_filter, options=options)
         if selected_file:
-            self.directory = os.path.dirname(selected_file)
+            self.directory = os.path.dirname(self.selected_file)
             self.selected_file = selected_file
             self.saveFile()
             return True
@@ -1402,7 +1414,8 @@ class SRC_Workbook(QMainWindow):
         try:
             formulavalue = self.formula_edit.text().strip()
 
-            formulas = ['sum', 'avg', 'count', 'max', 'similargraph']
+            formulas = ['sum', 'avg', 'count', 'max', 'similargraph',
+                        'pointgraph', 'bargraph', 'piegraph', 'histogram']
             formula = formulavalue.split()[0]
 
             if formula not in formulas:
@@ -1432,6 +1445,43 @@ class SRC_Workbook(QMainWindow):
                 plt.grid(True)
                 plt.show()
                 result = "Graph"
+            elif formula == 'pointgraph':
+                pltgraph = plt.figure()
+                pltgraph.suptitle("Point Graph")
+                plt.plot(operands, 'o')
+                plt.xlabel("X")
+                plt.ylabel("Y")
+                plt.grid(True)
+                plt.show()
+                result = "Graph"
+            elif formula == 'bargraph':
+                pltgraph = plt.figure()
+                pltgraph.suptitle("Bar Graph")
+                plt.bar(range(len(operands)), operands)
+                plt.xlabel("X")
+                plt.ylabel("Y")
+                plt.grid(True)
+                plt.show()
+                result = "Graph"
+            elif formula == 'piegraph':
+                pltgraph = plt.figure()
+                pltgraph.suptitle("Pie Graph")
+                plt.pie(operands)
+                plt.xlabel("X")
+                plt.ylabel("Y")
+                plt.grid(True)
+                plt.show()
+                result = "Graph"
+            elif formula == 'histogram':
+                pltgraph = plt.figure()
+                pltgraph.suptitle("Histogram")
+                plt.hist(operands)
+                plt.xlabel("X")
+                plt.ylabel("Y")
+                plt.grid(True)
+                plt.show()
+                result = "Graph"
+
             if result == "Graph":
                 pass
             else:
@@ -1446,6 +1496,18 @@ class SRC_Workbook(QMainWindow):
     def deletecell(self):
         for item in self.src_table.selectedItems():
             item.setText('')
+
+    def addrow(self):
+        self.src_table.insertRow(self.src_table.rowCount())
+
+    def addcolumn(self):
+        self.src_table.insertColumn(self.src_table.columnCount())
+
+    def addrowabove(self):
+        self.src_table.insertRow(self.src_table.currentRow())
+
+    def addcolumnleft(self):
+        self.src_table.insertColumn(self.src_table.currentColumn())
 
 
 if __name__ == "__main__":
