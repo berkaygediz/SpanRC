@@ -103,8 +103,6 @@ class SRC_UndoCommand(QUndoCommand):
 class SRC_Workbook(QMainWindow):
     def __init__(self, parent=None):
         super().__init__(parent)
-        # press c to continue (initialization bug)
-        # pdb.set_trace()
         starttime = datetime.datetime.now()
         settings = QSettings("berkaygediz", "SpanRC")
         self.setWindowIcon(QIcon("icon.png"))

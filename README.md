@@ -6,7 +6,7 @@
 
 SpanRC is a table processor. It is written in Python and uses the PyQt5 library for the graphical user interface. It is cross-platform and can be used on Windows, macOS, and Linux. It is designed to be a simple alternative to other table processors. It is lightweight and easy to use.
 
-### Screenshots
+## Screenshots
 
 ![Screenshot 1](spanrc_banner.png)
 
@@ -26,7 +26,6 @@ SpanRC is a table processor. It is written in Python and uses the PyQt5 library 
 - [x] Real-time statistics (row count, column count, cell count, etc.)
 - [x] Multi language (English, Turkish, German, Spanish, Azerbaijani)
 - [x] Cross-platform (Windows, macOS, Linux)
-- [x] Synchronization
 
 ### Prerequisites
 
