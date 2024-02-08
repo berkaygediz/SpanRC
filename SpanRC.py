@@ -7,12 +7,9 @@ import qtawesome as qta
 import matplotlib.pyplot as plt
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
-from PyQt5.QtTest import *
 from PyQt5.QtCore import *
 from PyQt5.QtPrintSupport import *
 from modules.translations import *
-
-# DEBUG ONLY VERSION - DO NOT USE IN PRODUCTION
 
 default_values = {
     "row": 1,
