@@ -1,0 +1,3 @@
+PyQt5==5.15.10
+matplotlib==3.8.2
+QtAwesome==1.3.0

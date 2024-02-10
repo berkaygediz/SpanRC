@@ -102,6 +102,9 @@ class SRC_Workbook(QMainWindow):
         super().__init__(parent)
         starttime = datetime.datetime.now()
         settings = QSettings("berkaygediz", "SpanRC")
+        if settings.value("current_language") == None:
+            settings.setValue("current_language", "English")
+            settings.sync()
         self.setWindowIcon(QIcon("icon.png"))
         self.setWindowModality(Qt.WindowModality.ApplicationModal)
         self.src_thread = SRC_Threading()
@@ -178,9 +181,6 @@ class SRC_Workbook(QMainWindow):
 
     def SRC_updateTitle(self):
         settings = QSettings("berkaygediz", "SpanRC")
-        if settings.value("current_language") == None:
-            settings.setValue("current_language", "English")
-            settings.sync()
         file = (
             self.file_name
             if self.file_name
