@@ -796,7 +796,7 @@ class SRC_Workbook(QMainWindow):
             reply = QMessageBox.question(
                 self,
                 "SpanRC",
-                translations[settings.value("current_language")]["open_message"],
+                translations[settings.value("current_language")]["open"],
                 QMessageBox.Yes | QMessageBox.No,
                 QMessageBox.No,
             )
