@@ -8,7 +8,7 @@ SpanRC is a table processor. It is written in Python and uses the PyQt5 library 
 
 ## Screenshots
 
-![Screenshot 1](spanrc_banner.png)
+![Screenshot](spanrc_banner_1.png)
 
 ### Features
 
@@ -26,11 +26,33 @@ SpanRC is a table processor. It is written in Python and uses the PyQt5 library 
 - [x] Real-time statistics (row count, column count, cell count, etc.)
 - [x] Multi language (English, Turkish, German, Spanish, Azerbaijani)
 - [x] Cross-platform (Windows, macOS, Linux)
+- [x] Power saver
+- [x] Hardware acceleration
 
 ### Prerequisites
 
 - Python 3.6+
 - PyQt5
+
+### Installation
+
+1. Open a terminal and clone the repository:
+
+```bash
+git clone https://github.com/berkaygediz/SpanRC.git
+```
+
+2. Install requirements:
+
+```bash
+pip install -r .\requirements.txt
+```
+
+### Usage
+
+```bash
+python SpanRC.py
+```
 
 ### Contributing
 
@@ -38,4 +60,4 @@ Contributions to the RichSpan project are welcome. Please read [CONTRIBUTING.md]
 
 ### License
 
-This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the GNU GPLv3, GNU LGPLv3 & Mozilla Public License Version 2.0.

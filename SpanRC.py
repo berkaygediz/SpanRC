@@ -1,49 +1,46 @@
-import os
-import sys
 import csv
 import datetime
+import os
+import sys
 import time
-import qtawesome as qta
+
 import matplotlib.pyplot as plt
-from PyQt5.QtWidgets import *
-from PyQt5.QtGui import *
+import qtawesome as qta
 from PyQt5.QtCore import *
+from PyQt5.QtGui import *
+from PyQt5.QtOpenGL import *
 from PyQt5.QtPrintSupport import *
+from PyQt5.QtWidgets import *
+
 from modules.translations import *
 
-default_values = {
-    "row": 1,
-    "column": 1,
-    "rowspan": 1,
-    "columnspan": 1,
-    "text": "",
-    "window_geometry": None,
-    "is_saved": None,
-    "file_name": None,
-    "default_directory": None,
-    "current_theme": "light",
-    "current_language": "English",
-    "file_type": "xsrc",
-    "last_opened_file": None,
+fallbackValues = {
     "currentRow": 0,
     "currentColumn": 0,
     "rowCount": 50,
     "columnCount": 100,
-    "windowState": None,
+    "windowScale": None,
+    "isSaved": None,
+    "fileName": None,
+    "defaultDirectory": None,
+    "appTheme": "light",
+    "appLanguage": "English",
+    "adaptiveResponse": 1,
 }
 
 
 class SRC_Threading(QThread):
     update_signal = pyqtSignal()
 
-    def __init__(self, parent=None):
+    def __init__(self, adaptiveResponse, parent=None):
         super(SRC_Threading, self).__init__(parent)
+        self.adaptiveResponse = float(adaptiveResponse)
         self.running = False
 
     def run(self):
         if not self.running:
             self.running = True
-            time.sleep(0.15)
+            time.sleep(0.15 * self.adaptiveResponse)
             self.update_signal.emit()
             self.running = False
 
@@ -52,6 +49,7 @@ class SRC_About(QMainWindow):
     def __init__(self, parent=None):
         super(SRC_About, self).__init__(parent)
         self.setWindowFlags(Qt.Dialog)
+        self.setWindowIcon(QIcon("spanrc_icon.ico"))
         self.setWindowModality(Qt.WindowModality.ApplicationModal)
         self.setGeometry(
             QStyle.alignedRect(
@@ -67,10 +65,11 @@ class SRC_About(QMainWindow):
         self.about_label.setTextFormat(Qt.RichText)
         self.about_label.setText(
             "<center>"
-            "<b>SpanRC</b><br>"
-            "A powerful spreadsheet application<br><br>"
-            "Made by Berkay Gediz<br>"
-            "Apache License 2.0</center>"
+            f"<b>{app.applicationDisplayName()}</b><br><br>"
+            "A powerful spreadsheet application<br>"
+            "Made by Berkay Gediz<br><br>"
+            "GNU General Public License v3.0<br>GNU LESSER GENERAL PUBLIC LICENSE v3.0<br>Mozilla Public License Version 2.0<br><br><br>"
+            "OpenGL: <b>ON</b></center>"
         )
         self.setCentralWidget(self.about_label)
 
@@ -102,12 +101,25 @@ class SRC_Workbook(QMainWindow):
         super().__init__(parent)
         starttime = datetime.datetime.now()
         settings = QSettings("berkaygediz", "SpanRC")
-        if settings.value("current_language") == None:
-            settings.setValue("current_language", "English")
+        if settings.value("appLanguage") == None:
+            settings.setValue("appLanguage", "English")
             settings.sync()
-        self.setWindowIcon(QIcon("icon.png"))
-        self.setWindowModality(Qt.WindowModality.ApplicationModal)
-        self.src_thread = SRC_Threading()
+        if settings.value("adaptiveResponse") == None:
+            settings.setValue("adaptiveResponse", 1)
+            settings.sync()
+        self.setWindowIcon(QIcon("spanrc_icon.ico"))
+        self.setWindowModality(Qt.ApplicationModal)
+
+        centralWidget = QGLWidget(self)
+
+        layout = QVBoxLayout(centralWidget)
+        self.hardwareAcceleration = QOpenGLWidget()
+        layout.addWidget(self.hardwareAcceleration)
+        self.setCentralWidget(centralWidget)
+
+        self.src_thread = SRC_Threading(
+            adaptiveResponse=settings.value("adaptiveResponse")
+        )
         self.src_thread.update_signal.connect(self.SRC_updateStatistics)
         self.SRC_themePalette()
         self.undo_stack = QUndoStack(self)
@@ -129,8 +141,11 @@ class SRC_Workbook(QMainWindow):
         self.src_table.setCursor(Qt.CursorShape.SizeAllCursor)
         self.showMaximized()
         self.setFocus()
-        QTimer.singleShot(50, self.SRC_restoreTheme)
-        QTimer.singleShot(150, self.SRC_restoreState)
+
+        self.adaptiveResponse = settings.value("adaptiveResponse")
+
+        QTimer.singleShot(50 * self.adaptiveResponse, self.SRC_restoreTheme)
+        QTimer.singleShot(150 * self.adaptiveResponse, self.SRC_restoreState)
         if self.src_table.columnCount() == 0 and self.src_table.rowCount() == 0:
             self.src_table.setColumnCount(100)
             self.src_table.setRowCount(50)
@@ -141,21 +156,22 @@ class SRC_Workbook(QMainWindow):
             self.setFocus()
             endtime = datetime.datetime.now()
             self.status_bar.showMessage(
-                str((endtime - starttime).total_seconds()) + " ms", 2500
+                str((endtime - starttime).total_seconds()) + " ms",
+                2500 * self.adaptiveResponse,
             )
 
     def closeEvent(self, event):
         settings = QSettings("berkaygediz", "SpanRC")
 
-        if settings.value("current_language") == None:
-            settings.setValue("current_language", "English")
+        if settings.value("appLanguage") == None:
+            settings.setValue("appLanguage", "English")
             settings.sync()
 
         if self.is_saved == False:
             reply = QMessageBox.question(
                 self,
-                "SpanRC",
-                translations[settings.value("current_language")]["exit_message"],
+                app.applicationDisplayName(),
+                translations[settings.value("appLanguage")]["exit_message"],
                 QMessageBox.Yes | QMessageBox.No,
                 QMessageBox.No,
             )
@@ -173,7 +189,7 @@ class SRC_Workbook(QMainWindow):
     def SRC_changeLanguage(self):
         language = self.language_combobox.currentText()
         settings = QSettings("berkaygediz", "SpanRC")
-        settings.setValue("current_language", language)
+        settings.setValue("appLanguage", language)
         settings.sync()
         self.SRC_toolbarTranslate()
         self.SRC_updateStatistics()
@@ -184,13 +200,13 @@ class SRC_Workbook(QMainWindow):
         file = (
             self.file_name
             if self.file_name
-            else translations[settings.value("current_language")]["new_title"]
+            else translations[settings.value("appLanguage")]["new_title"]
         )
         if self.is_saved == True:
             asterisk = ""
         else:
             asterisk = "*"
-        self.setWindowTitle(f"{file}{asterisk} — SpanRC")
+        self.setWindowTitle(f"{file}{asterisk} — {app.applicationDisplayName()}")
 
     def SRC_updateStatistics(self):
         settings = QSettings("berkaygediz", "SpanRC")
@@ -212,48 +228,48 @@ class SRC_Workbook(QMainWindow):
             "#sr-text { background-color: #E2E3E1; color: #000000; font-weight: bold;}"
             "</style></head><body>"
             "<table><tr>"
-            f"<th>{translations[settings.value('current_language')]['statistics_title']}</th>"
+            f"<th>{translations[settings.value('appLanguage')]['statistics_title']}</th>"
         )
-        statistics += f"<td>{translations[settings.value('current_language')]['statistics_message1']}</td><td>{row}</td><td>{translations[settings.value('current_language')]['statistics_message2']}</td><td>{column}</td>"
-        statistics += f"<td>{translations[settings.value('current_language')]['statistics_message2']}</td><td>{selected_cell[0]}:{selected_cell[1]}</td>"
+        statistics += f"<td>{translations[settings.value('appLanguage')]['statistics_message1']}</td><td>{row}</td><td>{translations[settings.value('appLanguage')]['statistics_message2']}</td><td>{column}</td>"
+        statistics += f"<td>{translations[settings.value('appLanguage')]['statistics_message2']}</td><td>{selected_cell[0]}:{selected_cell[1]}</td>"
         if self.src_table.selectedRanges():
-            statistics += f"<td>{translations[settings.value('current_language')]['statistics_message3']}</td><td>"
+            statistics += f"<td>{translations[settings.value('appLanguage')]['statistics_message3']}</td><td>"
             for selected_range in self.src_table.selectedRanges():
                 statistics += f"{selected_range.topRow() + 1}:{selected_range.leftColumn() + 1} - {selected_range.bottomRow() + 1}:{selected_range.rightColumn() + 1}</td>"
         else:
-            statistics += f"<td>{translations[settings.value('current_language')]['statistics_message4']}</td><td>{selected_cell[0]}:{selected_cell[1]}</td>"
+            statistics += f"<td>{translations[settings.value('appLanguage')]['statistics_message4']}</td><td>{selected_cell[0]}:{selected_cell[1]}</td>"
 
-        statistics += "</td><td id='sr-text'>SpanRC</td></tr></table></body></html>"
+        statistics += f"</td><td id='sr-text'>{app.applicationDisplayName()}</td></tr></table></body></html>"
         self.statistics_label.setText(statistics)
         self.statusBar().addPermanentWidget(self.statistics_label)
         self.SRC_updateTitle()
 
     def SRC_saveState(self):
         settings = QSettings("berkaygediz", "SpanRC")
-        settings.setValue("window_geometry", self.saveGeometry())
-        settings.setValue("default_directory", self.default_directory)
-        self.file_name = settings.value("file_name", self.file_name)
-        self.is_saved = settings.value("is_saved", self.is_saved)
+        settings.setValue("windowScale", self.saveGeometry())
+        settings.setValue("defaultDirectory", self.default_directory)
+        self.file_name = settings.value("fileName", self.file_name)
+        self.is_saved = settings.value("isSaved", self.is_saved)
         if self.selected_file:
-            settings.setValue("last_opened_file", self.selected_file)
+            settings.setValue("fileName", self.selected_file)
         settings.setValue(
-            "current_theme", "dark" if self.palette() == self.dark_theme else "light"
+            "appTheme", "dark" if self.palette() == self.dark_theme else "light"
         )
-        settings.setValue("current_language", self.language_combobox.currentText())
+        settings.setValue("appLanguage", self.language_combobox.currentText())
         settings.sync()
 
     def SRC_restoreState(self):
         settings = QSettings("berkaygediz", "SpanRC")
-        self.geometry = settings.value("window_geometry")
-        self.directory = settings.value("default_directory", self.default_directory)
-        self.file_name = settings.value("file_name", self.file_name)
-        self.is_saved = settings.value("is_saved", self.is_saved)
-        self.language_combobox.setCurrentText(settings.value("current_language"))
+        self.geometry = settings.value("windowScale")
+        self.directory = settings.value("defaultDirectory", self.default_directory)
+        self.file_name = settings.value("fileName", self.file_name)
+        self.is_saved = settings.value("isSaved", self.is_saved)
+        self.language_combobox.setCurrentText(settings.value("appLanguage"))
 
         if self.geometry is not None:
             self.restoreGeometry(self.geometry)
 
-        self.last_opened_file = settings.value("last_opened_file", "")
+        self.last_opened_file = settings.value("fileName", "")
         if self.last_opened_file and os.path.exists(self.last_opened_file):
             self.loadFile(self.last_opened_file)
 
@@ -309,7 +325,7 @@ class SRC_Workbook(QMainWindow):
 
     def SRC_restoreTheme(self):
         settings = QSettings("berkaygediz", "SpanRC")
-        if settings.value("current_theme") == "dark":
+        if settings.value("appTheme") == "dark":
             self.setPalette(self.dark_theme)
         else:
             self.setPalette(self.light_theme)
@@ -319,34 +335,34 @@ class SRC_Workbook(QMainWindow):
         self.light_theme = QPalette()
         self.dark_theme = QPalette()
 
-        self.light_theme.setColor(QPalette.Window, QColor(89, 111, 183))
+        self.light_theme.setColor(QPalette.Window, QColor(3, 65, 135))
         self.light_theme.setColor(QPalette.WindowText, QColor(255, 255, 255))
         self.light_theme.setColor(QPalette.Base, QColor(255, 255, 255))
         self.light_theme.setColor(QPalette.Text, QColor(0, 0, 0))
-        self.light_theme.setColor(QPalette.Highlight, QColor(221, 216, 184))
-        self.light_theme.setColor(QPalette.HighlightedText, QColor(0, 0, 0))
+        self.light_theme.setColor(QPalette.Highlight, QColor(105, 117, 156))
+        self.light_theme.setColor(QPalette.ButtonText, QColor(0, 0, 0))
 
-        self.dark_theme.setColor(QPalette.Window, QColor(58, 68, 93))
+        self.dark_theme.setColor(QPalette.Window, QColor(35, 39, 52))
         self.dark_theme.setColor(QPalette.WindowText, QColor(255, 255, 255))
-        self.dark_theme.setColor(QPalette.Base, QColor(94, 87, 104))
-        self.dark_theme.setColor(QPalette.Text, QColor(255, 255, 255))
-        self.dark_theme.setColor(QPalette.Highlight, QColor(221, 216, 184))
-        self.dark_theme.setColor(QPalette.HighlightedText, QColor(0, 0, 0))
+        self.dark_theme.setColor(QPalette.Base, QColor(80, 85, 122))
+        self.dark_theme.setColor(QPalette.Text, QColor(0, 0, 0))
+        self.dark_theme.setColor(QPalette.Highlight, QColor(105, 117, 156))
+        self.dark_theme.setColor(QPalette.ButtonText, QColor(0, 0, 0))
 
     def SRC_themeAction(self):
         settings = QSettings("berkaygediz", "SpanRC")
         if self.palette() == self.light_theme:
             self.setPalette(self.dark_theme)
-            settings.setValue("current_theme", "dark")
+            settings.setValue("appTheme", "dark")
         else:
             self.setPalette(self.light_theme)
-            settings.setValue("current_theme", "light")
+            settings.setValue("appTheme", "light")
         self.SRC_toolbarTheme()
 
     def SRC_toolbarTheme(self):
         palette = self.palette()
         if palette == self.light_theme:
-            text_color = QColor(37, 38, 39)
+            text_color = QColor(255, 255, 255)
         else:
             text_color = QColor(255, 255, 255)
 
@@ -360,75 +376,59 @@ class SRC_Workbook(QMainWindow):
 
     def SRC_toolbarTranslate(self):
         settings = QSettings("berkaygediz", "SpanRC")
-        if settings.value("current_language") == None:
-            settings.setValue("current_language", "English")
+        if settings.value("appLanguage") == None:
+            settings.setValue("appLanguage", "English")
             settings.sync()
-        self.language = settings.value("current_language")
-        self.newAction.setText(translations[settings.value("current_language")]["new"])
+        self.language = settings.value("appLanguage")
+        self.newAction.setText(translations[settings.value("appLanguage")]["new"])
         self.newAction.setStatusTip(
-            translations[settings.value("current_language")]["new_title"]
+            translations[settings.value("appLanguage")]["new_title"]
         )
-        self.openAction.setText(
-            translations[settings.value("current_language")]["open"]
-        )
+        self.openAction.setText(translations[settings.value("appLanguage")]["open"])
         self.openAction.setStatusTip(
-            translations[settings.value("current_language")]["open_title"]
+            translations[settings.value("appLanguage")]["open_title"]
         )
-        self.saveAction.setText(
-            translations[settings.value("current_language")]["save"]
-        )
+        self.saveAction.setText(translations[settings.value("appLanguage")]["save"])
         self.saveAction.setStatusTip(
-            translations[settings.value("current_language")]["save_title"]
+            translations[settings.value("appLanguage")]["save_title"]
         )
         self.saveasAction.setText(
-            translations[settings.value("current_language")]["save_as"]
+            translations[settings.value("appLanguage")]["save_as"]
         )
         self.saveasAction.setStatusTip(
-            translations[settings.value("current_language")]["save_as_title"]
+            translations[settings.value("appLanguage")]["save_as_title"]
         )
-        self.printAction.setText(
-            translations[settings.value("current_language")]["print"]
-        )
+        self.printAction.setText(translations[settings.value("appLanguage")]["print"])
         self.printAction.setStatusTip(
-            translations[settings.value("current_language")]["print_title"]
+            translations[settings.value("appLanguage")]["print_title"]
         )
-        self.exitAction.setText(
-            translations[settings.value("current_language")]["exit"]
-        )
+        self.exitAction.setText(translations[settings.value("appLanguage")]["exit"])
         self.exitAction.setStatusTip(
-            translations[settings.value("current_language")]["exit_title"]
+            translations[settings.value("appLanguage")]["exit_title"]
         )
-        self.deleteAction.setText(
-            translations[settings.value("current_language")]["delete"]
-        )
+        self.deleteAction.setText(translations[settings.value("appLanguage")]["delete"])
         self.deleteAction.setStatusTip(
-            translations[settings.value("current_language")]["delete_title"]
+            translations[settings.value("appLanguage")]["delete_title"]
         )
-        self.aboutAction.setText(
-            translations[settings.value("current_language")]["about"]
-        )
+        self.aboutAction.setText(translations[settings.value("appLanguage")]["about"])
         self.aboutAction.setStatusTip(
-            translations[settings.value("current_language")]["about_title"]
+            translations[settings.value("appLanguage")]["about_title"]
         )
-        self.undoAction.setText(
-            translations[settings.value("current_language")]["undo"]
-        )
+        self.undoAction.setText(translations[settings.value("appLanguage")]["undo"])
         self.undoAction.setStatusTip(
-            translations[settings.value("current_language")]["undo_title"]
+            translations[settings.value("appLanguage")]["undo_title"]
         )
-        self.redoAction.setText(
-            translations[settings.value("current_language")]["redo"]
-        )
+        self.redoAction.setText(translations[settings.value("appLanguage")]["redo"])
         self.redoAction.setStatusTip(
-            translations[settings.value("current_language")]["redo_title"]
+            translations[settings.value("appLanguage")]["redo_title"]
         )
         self.darklightAction.setText(
-            translations[settings.value("current_language")]["darklight"]
+            translations[settings.value("appLanguage")]["darklight"]
         )
         self.darklightAction.setStatusTip(
-            translations[settings.value("current_language")]["darklight_message"]
+            translations[settings.value("appLanguage")]["darklight_message"]
         )
-        self.help_label.setText(
+        self.helpText.setText(
             "<html><head><style>"
             "table {border-collapse: collapse; width: 100%;}"
             "th, td {text-align: left; padding: 8px;}"
@@ -437,31 +437,38 @@ class SRC_Workbook(QMainWindow):
             "th {background-color: #4CAF50; color: white;}"
             "</style></head><body>"
             "<table><tr><th>Shortcut</th><th>Function</th></tr>"
-            f"<tr><td>Ctrl + O</td><td>{translations[settings.value('current_language')]['open_title']}</td></tr>"
-            f"<tr><td>Ctrl + S</td><td>{translations[settings.value('current_language')]['save_title']}</td></tr>"
-            f"<tr><td>Ctrl + N</td><td>{translations[settings.value('current_language')]['new_title']}</td></tr>"
-            f"<tr><td>Ctrl + Shift + S</td><td>{translations[settings.value('current_language')]['save_as_title']}</td></tr>"
-            f"<tr><td>Ctrl + P</td><td>{translations[settings.value('current_language')]['print_title']}</td></tr>"
-            f"<tr><td>Ctrl + Q</td><td>{translations[settings.value('current_language')]['exit_title']}</td></tr>"
-            f"<tr><td>Ctrl + D</td><td>{translations[settings.value('current_language')]['delete_title']}</td></tr>"
-            f"<tr><td>Ctrl + A</td><td>{translations[settings.value('current_language')]['about_title']}</td></tr>"
-            f"<tr><td>Ctrl + Z</td><td>{translations[settings.value('current_language')]['undo_title']}</td></tr>"
-            f"<tr><td>Ctrl + Y</td><td>{translations[settings.value('current_language')]['redo_title']}</td></tr>"
-            f"<tr><td>Ctrl + L</td><td>{translations[settings.value('current_language')]['darklight_message']}</td></tr>"
+            f"<tr><td>Ctrl + O</td><td>{translations[settings.value('appLanguage')]['open_title']}</td></tr>"
+            f"<tr><td>Ctrl + S</td><td>{translations[settings.value('appLanguage')]['save_title']}</td></tr>"
+            f"<tr><td>Ctrl + N</td><td>{translations[settings.value('appLanguage')]['new_title']}</td></tr>"
+            f"<tr><td>Ctrl + Shift + S</td><td>{translations[settings.value('appLanguage')]['save_as_title']}</td></tr>"
+            f"<tr><td>Ctrl + P</td><td>{translations[settings.value('appLanguage')]['print_title']}</td></tr>"
+            f"<tr><td>Ctrl + Q</td><td>{translations[settings.value('appLanguage')]['exit_title']}</td></tr>"
+            f"<tr><td>Ctrl + D</td><td>{translations[settings.value('appLanguage')]['delete_title']}</td></tr>"
+            f"<tr><td>Ctrl + A</td><td>{translations[settings.value('appLanguage')]['about_title']}</td></tr>"
+            f"<tr><td>Ctrl + Z</td><td>{translations[settings.value('appLanguage')]['undo_title']}</td></tr>"
+            f"<tr><td>Ctrl + Y</td><td>{translations[settings.value('appLanguage')]['redo_title']}</td></tr>"
+            f"<tr><td>Ctrl + L</td><td>{translations[settings.value('appLanguage')]['darklight_message']}</td></tr>"
             "</table></body></html>"
         )
 
     def SRC_setupDock(self):
         settings = QSettings("berkaygediz", "SpanRC")
+        settings.sync()
         self.dock_widget = QDockWidget(
-            translations[settings.value("current_language")]["help"], self
+            translations[settings.value("appLanguage")]["help"] + " && Graph Log", self
         )
+        self.dock_widget.setObjectName("Help & Graph Log")
+        self.dock_widget.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
+        self.addDockWidget(Qt.RightDockWidgetArea, self.dock_widget)
+
+        self.scrollableArea = QScrollArea()
+        self.GraphLog_QVBox = QVBoxLayout()
         self.statistics_label = QLabel()
-        self.help_label = QLabel()
-        self.help_label.setWordWrap(True)
-        self.help_label.setTextInteractionFlags(Qt.TextSelectableByMouse)
-        self.help_label.setTextFormat(Qt.RichText)
-        self.help_label.setText(
+        self.helpText = QLabel()
+        self.helpText.setWordWrap(True)
+        self.helpText.setTextInteractionFlags(Qt.TextSelectableByMouse)
+        self.helpText.setTextFormat(Qt.RichText)
+        self.helpText.setText(
             "<html><head><style>"
             "table {border-collapse: collapse; width: 100%;}"
             "th, td {text-align: left; padding: 8px;}"
@@ -470,23 +477,37 @@ class SRC_Workbook(QMainWindow):
             "th {background-color: #4CAF50; color: white;}"
             "</style></head><body>"
             "<table><tr><th>Shortcut</th><th>Function</th></tr>"
-            f"<tr><td>Ctrl + N</td><td>{translations[settings.value('current_language')]['new_title']}</td></tr>"
-            f"<tr><td>Ctrl + O</td><td>{translations[settings.value('current_language')]['open_title']}</td></tr>"
-            f"<tr><td>Ctrl + S</td><td>{translations[settings.value('current_language')]['save_title']}</td></tr>"
-            f"<tr><td>Ctrl + Shift + S</td><td>{translations[settings.value('current_language')]['save_as_title']}</td></tr>"
-            f"<tr><td>Ctrl + P</td><td>{translations[settings.value('current_language')]['print_title']}</td></tr>"
-            f"<tr><td>Ctrl + Q</td><td>{translations[settings.value('current_language')]['exit_title']}</td></tr>"
-            f"<tr><td>Ctrl + D</td><td>{translations[settings.value('current_language')]['delete_title']}</td></tr>"
-            f"<tr><td>Ctrl + A</td><td>{translations[settings.value('current_language')]['about_title']}</td></tr>"
-            f"<tr><td>Ctrl + Z</td><td>{translations[settings.value('current_language')]['undo_title']}</td></tr>"
-            f"<tr><td>Ctrl + Y</td><td>{translations[settings.value('current_language')]['redo_title']}</td></tr>"
-            f"<tr><td>Ctrl + L</td><td>{translations[settings.value('current_language')]['darklight_message']}</td></tr>"
-            "</table></body></html>"
+            f"<tr><td>Ctrl + N</td><td>{translations[settings.value('appLanguage')]['new_title']}</td></tr>"
+            f"<tr><td>Ctrl + O</td><td>{translations[settings.value('appLanguage')]['open_title']}</td></tr>"
+            f"<tr><td>Ctrl + S</td><td>{translations[settings.value('appLanguage')]['save_title']}</td></tr>"
+            f"<tr><td>Ctrl + Shift + S</td><td>{translations[settings.value('appLanguage')]['save_as_title']}</td></tr>"
+            f"<tr><td>Ctrl + P</td><td>{translations[settings.value('appLanguage')]['print_title']}</td></tr>"
+            f"<tr><td>Ctrl + Q</td><td>{translations[settings.value('appLanguage')]['exit_title']}</td></tr>"
+            f"<tr><td>Ctrl + D</td><td>{translations[settings.value('appLanguage')]['delete_title']}</td></tr>"
+            f"<tr><td>Ctrl + A</td><td>{translations[settings.value('appLanguage')]['about_title']}</td></tr>"
+            f"<tr><td>Ctrl + Z</td><td>{translations[settings.value('appLanguage')]['undo_title']}</td></tr>"
+            f"<tr><td>Ctrl + Y</td><td>{translations[settings.value('appLanguage')]['redo_title']}</td></tr>"
+            f"<tr><td>Ctrl + L</td><td>{translations[settings.value('appLanguage')]['darklight_message']}</td></tr>"
+            "</table><p>NOTE: <b>Graph Log</b> support planned.</p></body></html>"
         )
-        self.dock_widget.setWidget(self.help_label)
+        self.GraphLog_QVBox.addWidget(self.helpText)
+
         self.dock_widget.setObjectName("Help")
         self.dock_widget.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
         self.addDockWidget(Qt.RightDockWidgetArea, self.dock_widget)
+
+        self.dock_widget.setWidget(self.scrollableArea)
+
+        self.dock_widget.setFeatures(
+            QDockWidget.NoDockWidgetFeatures | QDockWidget.DockWidgetClosable
+        )
+        self.dock_widget.setWidget(self.scrollableArea)
+        self.scrollableArea.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        self.scrollableArea.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        self.scrollableArea.setWidgetResizable(True)
+        scroll_contents = QWidget()
+        scroll_contents.setLayout(self.GraphLog_QVBox)
+        self.scrollableArea.setWidget(scroll_contents)
 
     def SRC_toolbarLabel(self, toolbar, text):
         label = QLabel(f"<b>{text}</b>")
@@ -504,7 +525,7 @@ class SRC_Workbook(QMainWindow):
 
     def SRC_setupActions(self):
         settings = QSettings("berkaygediz", "SpanRC")
-        current_language = settings.value("current_language")
+        current_language = settings.value("appLanguage")
         icon_theme = "white"
         if self.palette() == self.light_theme:
             icon_theme = "black"
@@ -639,14 +660,15 @@ class SRC_Workbook(QMainWindow):
 
     def SRC_setupToolbar(self):
         settings = QSettings("berkaygediz", "SpanRC")
+        icon_theme = "white"
 
         self.file_toolbar = self.addToolBar(
-            translations[settings.value("current_language")]["file"]
+            translations[settings.value("appLanguage")]["file"]
         )
         self.file_toolbar.setObjectName("File")
         self.SRC_toolbarLabel(
             self.file_toolbar,
-            translations[settings.value("current_language")]["file"] + ": ",
+            translations[settings.value("appLanguage")]["file"] + ": ",
         )
         self.file_toolbar.addActions(
             [
@@ -660,12 +682,12 @@ class SRC_Workbook(QMainWindow):
         )
 
         self.edit_toolbar = self.addToolBar(
-            translations[settings.value("current_language")]["edit"]
+            translations[settings.value("appLanguage")]["edit"]
         )
         self.edit_toolbar.setObjectName("Edit")
         self.SRC_toolbarLabel(
             self.edit_toolbar,
-            translations[settings.value("current_language")]["edit"] + ": ",
+            translations[settings.value("appLanguage")]["edit"] + ": ",
         )
         self.edit_toolbar.addActions(
             [
@@ -680,14 +702,39 @@ class SRC_Workbook(QMainWindow):
         )
 
         self.interface_toolbar = self.addToolBar(
-            translations[settings.value("current_language")]["interface"]
+            translations[settings.value("appLanguage")]["interface"]
         )
         self.interface_toolbar.setObjectName("Interface")
         self.SRC_toolbarLabel(
             self.interface_toolbar,
-            translations[settings.value("current_language")]["interface"] + ": ",
+            translations[settings.value("appLanguage")]["interface"] + ": ",
         )
-        self.interface_toolbar.addAction(self.darklightAction)
+        actionicon = qta.icon("fa5b.affiliatetheme", color="white")
+        self.theme_action = self.SRC_createAction(
+            translations[settings.value("appLanguage")]["darklight"],
+            translations[settings.value("appLanguage")]["darklight_message"],
+            self.SRC_themeAction,
+            QKeySequence("Ctrl+Shift+T"),
+            actionicon,
+        )
+        self.theme_action.setCheckable(True)
+        self.theme_action.setChecked(settings.value("appTheme") == "dark")
+
+        self.interface_toolbar.addAction(self.theme_action)
+        actionicon = qta.icon("fa5s.leaf", color=icon_theme)
+        self.powersaveraction = QAction("Power Saver", self, checkable=True)
+        self.powersaveraction.setIcon(QIcon(actionicon))
+        self.powersaveraction.setStatusTip(
+            "Experimental power saver function. Restart required."
+        )
+        self.powersaveraction.toggled.connect(self.RS_powerSaver)
+
+        self.interface_toolbar.addAction(self.powersaveraction)
+        response_exponential = settings.value(
+            "adaptiveResponse", fallbackValues["adaptiveResponse"]
+        )
+        self.powersaveraction.setChecked(response_exponential == 12)
+        self.interface_toolbar.addAction(self.powersaveraction)
         self.interface_toolbar.addAction(self.hide_dock_widget_action)
         self.interface_toolbar.addAction(self.aboutAction)
         self.language_combobox = QComboBox(self)
@@ -698,20 +745,20 @@ class SRC_Workbook(QMainWindow):
         self.interface_toolbar.addWidget(self.language_combobox)
         self.addToolBarBreak()
         self.formula_toolbar = self.addToolBar(
-            translations[settings.value("current_language")]["formula"]
+            translations[settings.value("appLanguage")]["formula"]
         )
         self.formula_toolbar.setObjectName("Formula")
         self.SRC_toolbarLabel(
             self.formula_toolbar,
-            translations[settings.value("current_language")]["formula"] + ": ",
+            translations[settings.value("appLanguage")]["formula"] + ": ",
         )
         self.formula_edit = QLineEdit()
         self.formula_edit.setPlaceholderText(
-            translations[settings.value("current_language")]["formula"]
+            translations[settings.value("appLanguage")]["formula"]
         )
         self.formula_edit.returnPressed.connect(self.calculateFormula)
         self.formula_button = QPushButton(
-            translations[settings.value("current_language")]["compute"]
+            translations[settings.value("appLanguage")]["compute"]
         )
         self.formula_button.setStyleSheet(
             "background-color: #A72461; color: #FFFFFF; font-weight: bold; padding: 10px; border-radius: 10px; border: 1px solid #000000; margin-left: 10px;"
@@ -751,52 +798,58 @@ class SRC_Workbook(QMainWindow):
         else:
             self.dock_widget.hide()
 
+    def RS_powerSaver(self, checked):
+        if checked:
+            self.adaptiveResponse = 12
+        else:
+            self.adaptiveResponse = fallbackValues["adaptiveResponse"]
+
+        settings = QSettings("berkaygediz", "SpanRC")
+        settings.setValue("adaptiveResponse", self.adaptiveResponse)
+        settings.sync()
+
     def new(self):
         settings = QSettings("berkaygediz", "SpanRC")
-        if self.is_saved == False:
+        if self.is_saved == True:
+            self.src_table.clearContents()
+            self.src_table.setRowCount(50)
+            self.src_table.setColumnCount(100)
+            self.directory = self.default_directory
+            self.file_name = None
+            self.is_saved = False
+            self.SRC_updateTitle()
+        else:
             reply = QMessageBox.question(
                 self,
-                "SpanRC",
-                translations[settings.value("current_language")]["new_title"],
+                app.applicationDisplayName(),
+                translations[settings.value("appLanguage")]["new_title"],
                 QMessageBox.Yes | QMessageBox.No,
                 QMessageBox.No,
             )
 
             if reply == QMessageBox.Yes:
-                self.SRC_saveState()
                 self.src_table.clearContents()
                 self.src_table.setRowCount(50)
                 self.src_table.setColumnCount(100)
-                self.is_saved = False
-                self.file_name = None
                 self.setWindowTitle(
-                    translations[settings.value("current_language")]["new_title"]
-                    + " — SpanRC"
+                    translations[settings.value("appLanguage")]["new_title"]
+                    + f" — {app.applicationDisplayName()}"
                 )
                 self.directory = self.default_directory
+                self.file_name = None
+                self.is_saved = False
+                self.SRC_updateTitle()
                 return True
             else:
-                return False
-        else:
-            self.src_table.clearContents()
-            self.src_table.setRowCount(50)
-            self.src_table.setColumnCount(100)
-            self.is_saved = False
-            self.file_name = None
-            self.setWindowTitle(
-                translations[settings.value("current_language")]["new_title"]
-                + " — SpanRC"
-            )
-            self.directory = self.default_directory
-            return True
+                pass
 
     def open(self):
         settings = QSettings("berkaygediz", "SpanRC")
         if self.is_saved is False:
             reply = QMessageBox.question(
                 self,
-                "SpanRC",
-                translations[settings.value("current_language")]["open"],
+                app.applicationDisplayName(),
+                translations[settings.value("appLanguage")]["open"],
                 QMessageBox.Yes | QMessageBox.No,
                 QMessageBox.No,
             )
@@ -813,8 +866,8 @@ class SRC_Workbook(QMainWindow):
         file_filter = "SpanRC Workbook (*.xsrc);;Comma Separated Values (*.csv)"
         selected_file, _ = QFileDialog.getOpenFileName(
             self,
-            translations[settings.value("current_language")]["open_title"]
-            + " — SpanRC",
+            translations[settings.value("appLanguage")]["open_title"]
+            + f" — {app.applicationDisplayName()}",
             self.directory,
             file_filter,
             options=options,
@@ -823,13 +876,13 @@ class SRC_Workbook(QMainWindow):
         if selected_file:
             self.loadFile(selected_file)
             return True
-        return False
+        else:
+            return False
 
     def loadFile(self, file_path):
         self.selected_file = file_path
         self.file_name = os.path.basename(self.selected_file)
         self.directory = os.path.dirname(self.selected_file)
-        self.setWindowTitle(self.file_name)
 
         if file_path.endswith(".xsrc") or file_path.endswith(".csv"):
             self.loadTable(file_path)
@@ -857,32 +910,29 @@ class SRC_Workbook(QMainWindow):
         self.src_table.resizeRowsToContents()
 
     def save(self):
-        if not self.selected_file:
-            if not self.saveAs():
-                return False
-
-        self.saveFile()
-        self.directory = os.path.dirname(self.selected_file)
-        self.SRC_updateTitle()
-        self.SRC_saveState()
-        return True
+        if self.is_saved == False:
+            self.saveFile()
+        elif self.file_name == None:
+            self.saveAs()
+        else:
+            self.saveFile()
 
     def saveAs(self):
         options = QFileDialog.Options()
         settings = QSettings("berkaygediz", "SpanRC")
         options |= QFileDialog.ReadOnly
-        file_filter = f"{translations[settings.value('current_language')]['xsrc']} (*.xsrc);;Comma Separated Values (*.csv)"
+        file_filter = f"{translations[settings.value('appLanguage')]['xsrc']} (*.xsrc);;Comma Separated Values (*.csv)"
         selected_file, _ = QFileDialog.getSaveFileName(
             self,
-            translations[settings.value("current_language")]["save_as_title"]
-            + " — SpanRC",
+            translations[settings.value("appLanguage")]["save_as_title"]
+            + f" — {app.applicationDisplayName()}",
             self.directory,
             file_filter,
             options=options,
         )
         if selected_file:
-            self.directory = os.path.dirname(self.selected_file)
-            self.selected_file = selected_file
+            self.file_name = selected_file
+            self.directory = os.path.dirname(self.file_name)
             self.saveFile()
             return True
         else:
@@ -904,8 +954,6 @@ class SRC_Workbook(QMainWindow):
                             row.append("")
                     writer.writerow(row)
 
-        self.file_name = os.path.basename(self.selected_file)
-        self.directory = os.path.dirname(self.selected_file)
         self.status_bar.showMessage("Saved.", 2000)
         self.is_saved = True
         self.SRC_updateTitle()
@@ -1056,11 +1104,16 @@ class SRC_Workbook(QMainWindow):
 
 
 if __name__ == "__main__":
+    if getattr(sys, "frozen", False):
+        applicationPath = sys._MEIPASS
+    elif __file__:
+        applicationPath = os.path.dirname(__file__)
     app = QApplication(sys.argv)
+    app.setWindowIcon(QIcon(os.path.join(applicationPath, "spanrc_icon.ico")))
     app.setOrganizationName("berkaygediz")
     app.setApplicationName("SpanRC")
-    app.setApplicationDisplayName("SpanRC")
-    app.setApplicationVersion("1.3.18")
+    app.setApplicationDisplayName("SpanRC 2024.06")
+    app.setApplicationVersion("1.4.2024.06-1")
     wb = SRC_Workbook()
     wb.show()
     sys.exit(app.exec_())
