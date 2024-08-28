@@ -5,12 +5,14 @@ import sys
 import time
 
 import matplotlib.pyplot as plt
+import psutil
 import qtawesome as qta
-from PyQt5.QtCore import *
-from PyQt5.QtGui import *
-from PyQt5.QtOpenGL import *
-from PyQt5.QtPrintSupport import *
-from PyQt5.QtWidgets import *
+from PySide6.QtCore import *
+from PySide6.QtGui import *
+from PySide6.QtOpenGL import *
+from PySide6.QtOpenGLWidgets import *
+from PySide6.QtPrintSupport import *
+from PySide6.QtWidgets import *
 
 from modules.translations import *
 
@@ -30,7 +32,7 @@ fallbackValues = {
 
 
 class SRC_Threading(QThread):
-    update_signal = pyqtSignal()
+    update_signal = Signal()
 
     def __init__(self, adaptiveResponse, parent=None):
         super(SRC_Threading, self).__init__(parent)
@@ -56,7 +58,7 @@ class SRC_About(QMainWindow):
                 Qt.LeftToRight,
                 Qt.AlignCenter,
                 self.size(),
-                QApplication.desktop().availableGeometry(),
+                QApplication.primaryScreen().availableGeometry(),
             )
         )
         self.about_label = QLabel()
@@ -110,7 +112,7 @@ class SRC_Workbook(QMainWindow):
         self.setWindowIcon(QIcon("spanrc_icon.ico"))
         self.setWindowModality(Qt.ApplicationModal)
 
-        centralWidget = QGLWidget(self)
+        centralWidget = QOpenGLWidget(self)
 
         layout = QVBoxLayout(centralWidget)
         self.hardwareAcceleration = QOpenGLWidget()
@@ -520,7 +522,9 @@ class SRC_Workbook(QMainWindow):
         if shortcut:
             action.setShortcut(shortcut)
         if icon:
-            action.setIcon(QIcon(icon))
+            action.setIcon(
+                QIcon("")
+            )  # qtawesome is library based on qt5 --> icon = Qt5.QtGui.QIcon
         return action
 
     def SRC_setupActions(self):
@@ -723,11 +727,11 @@ class SRC_Workbook(QMainWindow):
         self.interface_toolbar.addAction(self.theme_action)
         actionicon = qta.icon("fa5s.leaf", color=icon_theme)
         self.powersaveraction = QAction("Power Saver", self, checkable=True)
-        self.powersaveraction.setIcon(QIcon(actionicon))
+        # self.powersaveraction.setIcon(QIcon(actionicon))
         self.powersaveraction.setStatusTip(
             "Experimental power saver function. Restart required."
         )
-        self.powersaveraction.toggled.connect(self.RS_powerSaver)
+        self.powersaveraction.toggled.connect(self.SRC_hybridSaver)
 
         self.interface_toolbar.addAction(self.powersaveraction)
         response_exponential = settings.value(
@@ -798,13 +802,23 @@ class SRC_Workbook(QMainWindow):
         else:
             self.dock_widget.hide()
 
-    def RS_powerSaver(self, checked):
+    def SRC_hybridSaver(self, checked):
+        settings = QSettings("berkaygediz", "SpanRC")
         if checked:
-            self.adaptiveResponse = 12
+            battery = psutil.sensors_battery()
+            if battery:
+                if battery.percent <= 35 and not battery.power_plugged:
+                    # Ultra
+                    self.adaptiveResponse = 12
+                else:
+                    # Standard
+                    self.adaptiveResponse = 6
+            else:
+                # Global Standard
+                self.adaptiveResponse = 3
         else:
             self.adaptiveResponse = fallbackValues["adaptiveResponse"]
 
-        settings = QSettings("berkaygediz", "SpanRC")
         settings.setValue("adaptiveResponse", self.adaptiveResponse)
         settings.sync()
 
@@ -1112,8 +1126,8 @@ if __name__ == "__main__":
     app.setWindowIcon(QIcon(os.path.join(applicationPath, "spanrc_icon.ico")))
     app.setOrganizationName("berkaygediz")
     app.setApplicationName("SpanRC")
-    app.setApplicationDisplayName("SpanRC 2024.06")
-    app.setApplicationVersion("1.4.2024.06-1")
+    app.setApplicationDisplayName("SpanRC 2024.08")
+    app.setApplicationVersion("1.4.2024.08-1")
     wb = SRC_Workbook()
     wb.show()
-    sys.exit(app.exec_())
+    sys.exit(app.exec())
