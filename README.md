@@ -1,15 +1,16 @@
-# SpanRC - A Lightweight Spreadsheet Editor
-![Screenshot](spanrc_banner_1.png)
+# SolidSheets - A Lightweight Spreadsheet Editor
 
-![GitHub release (latest by date)](https://img.shields.io/github/v/release/berkaygediz/spanrc)
-![GitHub repo size](https://img.shields.io/github/repo-size/berkaygediz/spanrc)
-![GitHub](https://img.shields.io/github/license/berkaygediz/spanrc)
+![Screenshot](images/solidsheets_banner_0.png)
 
-SpanRC is a lightweight spreadsheet editor written in Python, utilizing the PyQt5 library for its graphical interface. It offers a straightforward alternative to traditional spreadsheet applications, emphasizing simplicity and efficiency.
+![GitHub release (latest by date)](https://img.shields.io/github/v/release/berkaygediz/solidsheets)
+![GitHub repo size](https://img.shields.io/github/repo-size/berkaygediz/solidsheets)
+![GitHub](https://img.shields.io/github/license/berkaygediz/solidsheets)
+
+SolidSheets is a lightweight spreadsheet editor written in Python, utilizing the PySide6 library for its graphical interface. It offers a straightforward alternative to traditional spreadsheet applications, emphasizing simplicity and efficiency.
 
 ## Features
 
-- [x] **File Operations**: Open and save CSV & XSRC files (SpanRC Files).
+- [x] **File Operations**: Open and save CSV, SSFS (SolidSheets Files) & XLSX (partial).
 - [x] **Printing**: Print or export tables to PDF format.
 - [x] **Editing**: Modify tables with options to delete, edit rows, and columns.
 - [x] **Formula Support**: Includes functions like avg, sum, min, max, count, similargraph, etc.
@@ -23,15 +24,19 @@ SpanRC is a lightweight spreadsheet editor written in Python, utilizing the PyQt
 
 ## Prerequisites
 
-- Python 3.6+
-- PyQt5
+- Python 3.12+
+- PySide6
+- matplotlib
+- psutil
+- pandas
+- openpyxl
 
 ## Installation
 
 1. Clone the repository:
 
    ```bash
-   git clone https://github.com/berkaygediz/SpanRC.git
+   git clone https://github.com/berkaygediz/SolidSheets.git
    ```
 
 2. Install requirements:
@@ -40,17 +45,23 @@ SpanRC is a lightweight spreadsheet editor written in Python, utilizing the PyQt
    pip install -r requirements.txt
    ```
 
+3. Creating a executable file (Unsigned):
+
+   ```bash
+   pyinstaller --noconfirm --onefile --windowed --icon "solidsheets_icon.ico" --name "SolidSheets" --clean --optimize "2" --add-data "solidsheets_icon.png;."  "SolidSheets.py"
+   ```
+
 ## Usage
 
-Launch SpanRC from the command line:
+Launch SolidSheets from the command line:
 
 ```bash
-python SpanRC.py
+python SolidSheets.py
 ```
 
 ## Contributing
 
-Contributions to the SpanRC project are encouraged. Please refer to [CONTRIBUTING.md](CONTRIBUTING.md) for details on how to contribute and our code of conduct.
+Contributions to the SolidSheets project are welcomed. Please refer to [CONTRIBUTING.md](CONTRIBUTING.md) for details on how to contribute and our code of conduct.
 
 ## License
 

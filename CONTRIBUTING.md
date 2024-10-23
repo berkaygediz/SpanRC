@@ -1,6 +1,6 @@
-# Contributing to SpanRC
+# Contributing to SolidSheets
 
-Thank you for considering contributing to SpanRC! We welcome your contributions.
+Thank you for considering contributing to SolidSheets! We welcome your contributions.
 
 Before contributing, please take a moment to review this document to ensure a smooth and efficient collaboration process.
 
@@ -20,15 +20,15 @@ Before contributing, please take a moment to review this document to ensure a sm
 2. Clone the forked repository to your local machine:
 
     ```bash
-    git clone https://github.com/berkaygediz/SpanRC.git
+    git clone https://github.com/berkaygediz/SolidSheets.git
     ```
 
 3. Set up your development environment. You may need to install dependencies:
 
     ```bash
     # Install required dependencies
-    # Example: PyQt5
-    pip install pyqt5
+    # Example: PySide6
+    pip install PySide6
     ```
 
 4. Make your changes and modifications.
@@ -60,8 +60,8 @@ If you encounter any issues or bugs, please report them by opening an issue on t
 ## Development Environment
 
 - Python 3.x
-- PyQt5
+- PySide6
 
 ## License
 
-By contributing to SpanRC, you agree that your contributions will be licensed under the project's [LICENSE](LICENSE).
+By contributing to SolidSheets, you agree that your contributions will be licensed under the project's [LICENSE](LICENSE).
