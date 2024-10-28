@@ -1,6 +1,6 @@
 # SolidSheets - A Lightweight Spreadsheet Editor
 
-![Screenshot](images/solidsheets_banner_0.png)
+![Screenshot](images/solidsheets_banner_1.png)
 
 ![GitHub release (latest by date)](https://img.shields.io/github/v/release/berkaygediz/solidsheets)
 ![GitHub repo size](https://img.shields.io/github/repo-size/berkaygediz/solidsheets)
