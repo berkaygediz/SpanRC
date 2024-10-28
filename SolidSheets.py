@@ -3,6 +3,7 @@ import datetime
 import locale
 import os
 import sys
+from datetime import timezone
 
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -39,12 +40,80 @@ class SS_About(QMainWindow):
         self.about_label.setText(
             "<center>"
             f"<b>{app.applicationDisplayName()}</b><br><br>"
-            "A powerful spreadsheet application<br>"
+            "Real-time calculation and formula supported spreadsheet editor.<br>"
             "Made by Berkay Gediz<br><br>"
             "GNU General Public License v3.0<br>GNU LESSER GENERAL PUBLIC LICENSE v3.0<br>Mozilla Public License Version 2.0<br><br><b>Libraries: </b> pandas-dev/pandas, matplotlib/matplotlib, openpyxl/openpyxl, PySide6, psutil<br><br>"
             "OpenGL: <b>ON</b></center>"
         )
         self.setCentralWidget(self.about_label)
+
+
+class SS_Help(QMainWindow):
+    def __init__(self, parent=None):
+        super(SS_Help, self).__init__(parent)
+        self.setWindowFlags(Qt.Dialog)
+        self.setWindowIcon(QIcon("solidsheets_icon.ico"))
+        self.setWindowModality(Qt.WindowModality.WindowModal)
+        self.setMinimumSize(480, 360)
+
+        self.setGeometry(
+            QStyle.alignedRect(
+                Qt.LeftToRight,
+                Qt.AlignCenter,
+                self.size(),
+                QApplication.primaryScreen().availableGeometry(),
+            )
+        )
+
+        scroll_area = QScrollArea()
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+
+        main_widget = QWidget()
+        layout = QVBoxLayout()
+        layout.setContentsMargins(0, 20, 0, 0)
+
+        self.help_label = QLabel()
+        self.help_label.setWordWrap(True)
+        self.help_label.setTextInteractionFlags(Qt.TextSelectableByMouse)
+        self.help_label.setTextFormat(Qt.RichText)
+
+        settings = QSettings("berkaygediz", "SolidSheets")
+        self.help_label.setText(
+            "<html><head><style>"
+            "table {border-collapse: collapse; width: 80%; margin: auto;}"
+            "th, td {text-align: left; padding: 8px;}"
+            "tr:nth-child(even) {background-color: #f2f2f2;}"
+            "tr:hover {background-color: #ddd;}"
+            "th {background-color: #4CAF50; color: white;}"
+            "body {text-align: center;}"
+            "</style></head><body>"
+            "<h1>Help</h1>"
+            "<table><tr><th>Shortcut</th><th>Function</th></tr>"
+            f"<tr><td>Ctrl + O</td><td>{translations[settings.value('appLanguage')]['open_title']}</td></tr>"
+            f"<tr><td>Ctrl + S</td><td>{translations[settings.value('appLanguage')]['save_title']}</td></tr>"
+            f"<tr><td>Ctrl + N</td><td>{translations[settings.value('appLanguage')]['new_title']}</td></tr>"
+            f"<tr><td>Ctrl + Shift + S</td><td>{translations[settings.value('appLanguage')]['save_as_title']}</td></tr>"
+            f"<tr><td>Ctrl + P</td><td>{translations[settings.value('appLanguage')]['print_title']}</td></tr>"
+            f"<tr><td>Ctrl + Q</td><td>{translations[settings.value('appLanguage')]['exit_title']}</td></tr>"
+            f"<tr><td>Ctrl + D</td><td>{translations[settings.value('appLanguage')]['delete_title']}</td></tr>"
+            f"<tr><td>Ctrl + A</td><td>{translations[settings.value('appLanguage')]['about_title']}</td></tr>"
+            f"<tr><td>Ctrl + Z</td><td>{translations[settings.value('appLanguage')]['undo_title']}</td></tr>"
+            f"<tr><td>Ctrl + Y</td><td>{translations[settings.value('appLanguage')]['redo_title']}</td></tr>"
+            f"<tr><td>Ctrl + L</td><td>{translations[settings.value('appLanguage')]['darklight_message']}</td></tr>"
+            f"<tr><td>Ctrl + Shift + R</td><td>{translations[settings.value('appLanguage')]['add_row_title']}</td></tr>"
+            f"<tr><td>Ctrl + Shift + C</td><td>{translations[settings.value('appLanguage')]['add_column_title']}</td></tr>"
+            f"<tr><td>Ctrl + Shift + T</td><td>{translations[settings.value('appLanguage')]['add_row_above_title']}</td></tr>"
+            f"<tr><td>Ctrl + Shift + L</td><td>{translations[settings.value('appLanguage')]['add_column_left_title']}</td></tr>"
+            "</table></body></html>"
+        )
+
+        layout.addWidget(self.help_label)
+        main_widget.setLayout(layout)
+        scroll_area.setWidget(main_widget)
+
+        self.setCentralWidget(scroll_area)
 
 
 class SS_UndoCommand(QUndoCommand):
@@ -144,7 +213,7 @@ class SS_Workbook(QMainWindow):
 
         endtime = datetime.datetime.now()
         self.status_bar.showMessage(
-            str((endtime - starttime).total_seconds()) + " ms", 2500
+            str((endtime - starttime).total_seconds()) + " sec", 2500
         )
 
     def closeEvent(self, event):
@@ -408,10 +477,6 @@ class SS_Workbook(QMainWindow):
         self.printAction.setStatusTip(
             translations[settings.value("appLanguage")]["print_title"]
         )
-        self.exitAction.setText(translations[settings.value("appLanguage")]["exit"])
-        self.exitAction.setStatusTip(
-            translations[settings.value("appLanguage")]["exit_title"]
-        )
         self.deleteAction.setText(translations[settings.value("appLanguage")]["delete"])
         self.deleteAction.setStatusTip(
             translations[settings.value("appLanguage")]["delete_title"]
@@ -464,86 +529,36 @@ class SS_Workbook(QMainWindow):
         self.powersaveraction.setStatusTip(
             translations[settings.value("appLanguage")]["powersaver_message"]
         )
-        self.helpText.setText(
-            "<html><head><style>"
-            "table {border-collapse: collapse; width: 100%;}"
-            "th, td {text-align: left; padding: 8px;}"
-            "tr:nth-child(even) {background-color: #f2f2f2;}"
-            "tr:hover {background-color: #ddd;}"
-            "th {background-color: #4CAF50; color: white;}"
-            "</style></head><body>"
-            "<table><tr><th>Shortcut</th><th>Function</th></tr>"
-            f"<tr><td>Ctrl + O</td><td>{translations[settings.value('appLanguage')]['open_title']}</td></tr>"
-            f"<tr><td>Ctrl + S</td><td>{translations[settings.value('appLanguage')]['save_title']}</td></tr>"
-            f"<tr><td>Ctrl + N</td><td>{translations[settings.value('appLanguage')]['new_title']}</td></tr>"
-            f"<tr><td>Ctrl + Shift + S</td><td>{translations[settings.value('appLanguage')]['save_as_title']}</td></tr>"
-            f"<tr><td>Ctrl + P</td><td>{translations[settings.value('appLanguage')]['print_title']}</td></tr>"
-            f"<tr><td>Ctrl + Q</td><td>{translations[settings.value('appLanguage')]['exit_title']}</td></tr>"
-            f"<tr><td>Ctrl + D</td><td>{translations[settings.value('appLanguage')]['delete_title']}</td></tr>"
-            f"<tr><td>Ctrl + A</td><td>{translations[settings.value('appLanguage')]['about_title']}</td></tr>"
-            f"<tr><td>Ctrl + Z</td><td>{translations[settings.value('appLanguage')]['undo_title']}</td></tr>"
-            f"<tr><td>Ctrl + Y</td><td>{translations[settings.value('appLanguage')]['redo_title']}</td></tr>"
-            f"<tr><td>Ctrl + L</td><td>{translations[settings.value('appLanguage')]['darklight_message']}</td></tr>"
-            "</table></body></html>"
-        )
 
     def initDock(self):
         settings = QSettings("berkaygediz", "SolidSheets")
         settings.sync()
-        self.dock_widget = QDockWidget(
-            translations[settings.value("appLanguage")]["help"] + " && Graph Log", self
-        )
-        self.dock_widget.setObjectName("Help & Graph Log")
+        self.statistics_label = QLabel()
+        self.dock_widget = QDockWidget("Graph Log", self)
+        self.dock_widget.setObjectName("Graph Log")
         self.dock_widget.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
-        self.addDockWidget(Qt.RightDockWidgetArea, self.dock_widget)
 
         self.scrollableArea = QScrollArea()
         self.GraphLog_QVBox = QVBoxLayout()
-        self.statistics_label = QLabel()
-        self.helpText = QLabel()
-        self.helpText.setWordWrap(True)
-        self.helpText.setTextInteractionFlags(Qt.TextSelectableByMouse)
-        self.helpText.setTextFormat(Qt.RichText)
-        self.helpText.setText(
-            "<html><head><style>"
-            "table {border-collapse: collapse; width: 100%;}"
-            "th, td {text-align: left; padding: 8px;}"
-            "tr:nth-child(even) {background-color: #f2f2f2;}"
-            "tr:hover {background-color: #ddd;}"
-            "th {background-color: #4CAF50; color: white;}"
-            "</style></head><body>"
-            "<table><tr><th>Shortcut</th><th>Function</th></tr>"
-            f"<tr><td>Ctrl + N</td><td>{translations[settings.value('appLanguage')]['new_title']}</td></tr>"
-            f"<tr><td>Ctrl + O</td><td>{translations[settings.value('appLanguage')]['open_title']}</td></tr>"
-            f"<tr><td>Ctrl + S</td><td>{translations[settings.value('appLanguage')]['save_title']}</td></tr>"
-            f"<tr><td>Ctrl + Shift + S</td><td>{translations[settings.value('appLanguage')]['save_as_title']}</td></tr>"
-            f"<tr><td>Ctrl + P</td><td>{translations[settings.value('appLanguage')]['print_title']}</td></tr>"
-            f"<tr><td>Ctrl + Q</td><td>{translations[settings.value('appLanguage')]['exit_title']}</td></tr>"
-            f"<tr><td>Ctrl + D</td><td>{translations[settings.value('appLanguage')]['delete_title']}</td></tr>"
-            f"<tr><td>Ctrl + A</td><td>{translations[settings.value('appLanguage')]['about_title']}</td></tr>"
-            f"<tr><td>Ctrl + Z</td><td>{translations[settings.value('appLanguage')]['undo_title']}</td></tr>"
-            f"<tr><td>Ctrl + Y</td><td>{translations[settings.value('appLanguage')]['redo_title']}</td></tr>"
-            f"<tr><td>Ctrl + L</td><td>{translations[settings.value('appLanguage')]['darklight_message']}</td></tr>"
-            "</table><p>NOTE: <b>Graph Log</b> support planned.</p></body></html>"
-        )
-        self.GraphLog_QVBox.addWidget(self.helpText)
 
-        self.dock_widget.setObjectName("Help")
+        self.graph_labels = []
+        self.dock_widget.setObjectName("GraphLog")
         self.dock_widget.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
-        self.addDockWidget(Qt.RightDockWidgetArea, self.dock_widget)
 
         self.dock_widget.setWidget(self.scrollableArea)
 
         self.dock_widget.setFeatures(
             QDockWidget.NoDockWidgetFeatures | QDockWidget.DockWidgetClosable
         )
-        self.dock_widget.setWidget(self.scrollableArea)
         self.scrollableArea.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         self.scrollableArea.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         self.scrollableArea.setWidgetResizable(True)
         scroll_contents = QWidget()
         scroll_contents.setLayout(self.GraphLog_QVBox)
         self.scrollableArea.setWidget(scroll_contents)
+
+        self.dock_widget.setWidget(self.scrollableArea)
+        self.addDockWidget(Qt.RightDockWidgetArea, self.dock_widget)
 
     def toolbarLabel(self, toolbar, text):
         label = QLabel(f"<b>{text}</b>")
@@ -596,13 +611,6 @@ class SS_Workbook(QMainWindow):
             QKeySequence.Print,
             "",
         )
-        self.exitAction = self.createAction(
-            translations[settings.value("appLanguage")]["exit"],
-            translations[settings.value("appLanguage")]["exit_message"],
-            self.close,
-            QKeySequence.Quit,
-            "",
-        )
         self.deleteAction = self.createAction(
             translations[settings.value("appLanguage")]["delete"],
             translations[settings.value("appLanguage")]["delete_title"],
@@ -638,13 +646,23 @@ class SS_Workbook(QMainWindow):
             QKeySequence("Ctrl+Shift+L"),
             "",
         )
+
         self.hide_dock_widget_action = self.createAction(
-            translations[settings.value("appLanguage")]["help"],
-            translations[settings.value("appLanguage")]["help"],
+            "Graph Log",
+            "Graph Log",
             self.SS_toggleDock,
             QKeySequence("Ctrl+H"),
             "",
         )
+
+        self.helpAction = self.createAction(
+            translations[settings.value("appLanguage")]["help"],
+            translations[settings.value("appLanguage")]["help"],
+            self.viewHelp,
+            QKeySequence("Ctrl+H"),
+            "",
+        )
+
         self.aboutAction = self.createAction(
             translations[settings.value("appLanguage")]["about"],
             translations[settings.value("appLanguage")]["about_title"],
@@ -692,7 +710,6 @@ class SS_Workbook(QMainWindow):
                 self.saveAction,
                 self.saveasAction,
                 self.printAction,
-                self.exitAction,
             ]
         )
 
@@ -758,6 +775,7 @@ class SS_Workbook(QMainWindow):
         self.powersaveraction.setChecked(response_exponential > 1)
         self.interface_toolbar.addAction(self.powersaveraction)
         self.interface_toolbar.addAction(self.hide_dock_widget_action)
+        self.interface_toolbar.addAction(self.helpAction)
         self.interface_toolbar.addAction(self.aboutAction)
         self.language_combobox = QComboBox(self)
         self.language_combobox.setStyleSheet("background-color:#000000; color:#FFFFFF;")
@@ -911,11 +929,9 @@ class SS_Workbook(QMainWindow):
             if self.file_name.endswith(".xlsx"):
                 try:
                     read_file = pd.read_excel(self.file_name)
-                    read_file.to_csv(
-                        f"{self.file_name}-transformed.ssfs", index=None, header=True
-                    )
-                    # df = pd.DataFrame(pd.read_csv(f"{self.file_name}-transformed.ssfs"))
-                    self.LoadSpreadsheet(f"{self.file_name}-transformed.ssfs")
+                    read_file.to_csv(f"{self.file_name}.ssfs", index=None, header=True)
+                    # df = pd.DataFrame(pd.read_csv(f"{self.file_name}.ssfs"))
+                    self.LoadSpreadsheet(f"{self.file_name}.ssfs")
                 except:
                     QMessageBox.warning(self, None, "Conversion failed.")
             else:
@@ -1000,19 +1016,66 @@ class SS_Workbook(QMainWindow):
         self.updateTitle()
 
     def PrintSpreadsheet(self):
-        printer = QPrinter(QPrinter.HighResolution)
-        printer.setOrientation(QPrinter.Landscape)
-        printer.setPageMargins(0, 0, 0, 0, QPrinter.Millimeter)
-        printer.setFullPage(True)
-        printer.setDocName(self.file_name)
+        settings = QSettings("berkaygediz", "SolidSheets")
+        selected_ranges = self.SpreadsheetArea.selectedRanges()
 
-        preview_dialog = QPrintPreviewDialog(printer, self)
-        preview_dialog.paintRequested.connect(self.SpreadsheetArea.print_)
-        preview_dialog.exec_()
+        if selected_ranges:
+            printer = QPrinter(QPrinter.HighResolution)
+            printer.setPageOrientation(QPageLayout.Orientation.Landscape)
+            printer.setPageMargins(QMargins(0, 0, 0, 0), QPageLayout.Millimeter)
+
+            printer.setFullPage(True)
+            printer.setDocName(self.file_name)
+
+            preview_dialog = QPrintPreviewDialog(printer, self)
+            preview_dialog.paintRequested.connect(self.PrintSelectedCells)
+            preview_dialog.exec()
+        else:
+            QMessageBox.warning(
+                self, None, translations[settings.value("appLanguage")]["print_warning"]
+            )
+
+    def PrintSelectedCells(self, printer):
+        painter = QPainter(printer)
+        rect = painter.viewport()
+
+        rect.adjust(20, 20, -20, -20)
+
+        selected_ranges = self.SpreadsheetArea.selectedRanges()
+
+        for range_ in selected_ranges:
+            for row in range(range_.topRow(), range_.bottomRow() + 1):
+                for column in range(range_.leftColumn(), range_.rightColumn() + 1):
+                    item = self.SpreadsheetArea.item(row, column)
+                    if item:
+                        cell_width = self.SpreadsheetArea.columnWidth(column)
+                        cell_height = self.SpreadsheetArea.rowHeight(row)
+
+                        x = rect.x() + (column - range_.leftColumn()) * cell_width
+                        y = rect.y() + (row - range_.topRow()) * cell_height
+
+                        painter.fillRect(
+                            QRect(x, y, cell_width, cell_height), Qt.lightGray
+                        )
+                        painter.drawRect(QRect(x, y, cell_width, cell_height))
+
+                        painter.setPen(Qt.black)
+                        painter.setFont(QFont("Arial", 10))
+                        painter.drawText(
+                            QRect(x, y, cell_width, cell_height),
+                            Qt.AlignCenter,
+                            item.text(),
+                        )
+
+        painter.end()
 
     def viewAbout(self):
         self.viewAbout = SS_About()
         self.viewAbout.show()
+
+    def viewHelp(self):
+        help_window = SS_Help(self)
+        help_window.show()
 
     def selectedCells(self):
         selected_cells = self.SpreadsheetArea.selectedRanges()
@@ -1034,6 +1097,9 @@ class SS_Workbook(QMainWindow):
         return values
 
     def computeFormula(self):
+        QTimer.singleShot(25, self.processFormula)
+
+    def processFormula(self):
         try:
             formulavalue = self.formula_edit.text().strip()
             formula = formulavalue.split()[0]
@@ -1056,61 +1122,73 @@ class SS_Workbook(QMainWindow):
                 result = max(operands)
             elif formula == "min":
                 result = min(operands)
-            elif formula == "similargraph":
+            elif formula in graphformulas:
+                start_elapsed = datetime.datetime.now()
+                result = "graph"
                 pltgraph = plt.figure()
-                pltgraph.suptitle("Similar Graph")
-                plt.plot(operands)
+                pltgraph.suptitle(graphformulas[formula])
+                if formula == "similargraph":
+                    plt.plot(operands)
+                elif formula == "pointgraph":
+                    plt.plot(operands, "o")
+                elif formula == "bargraph":
+                    plt.bar(range(len(operands)), operands)
+                elif formula == "piegraph":
+                    plt.pie(operands)
+                elif formula == "histogram":
+                    plt.hist(operands)
                 plt.xlabel("X")
                 plt.ylabel("Y")
                 plt.grid(True)
-                plt.show()
+                datetime_string = QDateTime.currentDateTimeUtc().toString(
+                    "yyyy-MM-dd HH:mm:ss"
+                )
+                utc_timestamp = (
+                    datetime.datetime.now(timezone.utc)
+                    .replace(tzinfo=timezone.utc)
+                    .timestamp()
+                )
+                plt.savefig(f"solidsheets_G{utc_timestamp}.png")
+                plt.close()
                 result = "Graph"
-            elif formula == "pointgraph":
-                pltgraph = plt.figure()
-                pltgraph.suptitle("Point Graph")
-                plt.plot(operands, "o")
-                plt.xlabel("X")
-                plt.ylabel("Y")
-                plt.grid(True)
-                plt.show()
-                result = "Graph"
-            elif formula == "bargraph":
-                pltgraph = plt.figure()
-                pltgraph.suptitle("Bar Graph")
-                plt.bar(range(len(operands)), operands)
-                plt.xlabel("X")
-                plt.ylabel("Y")
-                plt.grid(True)
-                plt.show()
-                result = "Graph"
-            elif formula == "piegraph":
-                pltgraph = plt.figure()
-                pltgraph.suptitle("Pie Graph")
-                plt.pie(operands)
-                plt.xlabel("X")
-                plt.ylabel("Y")
-                plt.grid(True)
-                plt.show()
-                result = "Graph"
-            elif formula == "histogram":
-                pltgraph = plt.figure()
-                pltgraph.suptitle("Histogram")
-                plt.hist(operands)
-                plt.xlabel("X")
-                plt.ylabel("Y")
-                plt.grid(True)
-                plt.show()
-                result = "Graph"
+                end_elasped = datetime.datetime.now()
 
-            if result == "Graph":
-                pass
-            else:
+                graph_label = QLabel()
+                graph_label.setPixmap(QPixmap(f"solidsheets_G{utc_timestamp}.png"))
+                graph_label.setScaledContents(True)
+                self.GraphLog_QVBox.insertWidget(0, graph_label)
+
+                date_label = QLabel(
+                    f"{datetime_string} ({str((end_elasped - start_elapsed).total_seconds()) + " sec"})"
+                )
+                self.GraphLog_QVBox.insertWidget(1, date_label)
+
+                save_button = QPushButton("Save")
+                save_button.clicked.connect(
+                    lambda: self.saveGraph(f"solidsheets_G{utc_timestamp}.png")
+                )
+                self.GraphLog_QVBox.insertWidget(2, save_button)
+                self.dock_widget.setVisible(True)
+
+            if result != "Graph":
                 QMessageBox.information(self, "Formula", f"{formula} : {result}")
 
         except ValueError as valueerror:
             QMessageBox.critical(self, "Formula", str(valueerror))
         except Exception as exception:
             QMessageBox.critical(self, "Formula", str(exception))
+
+    def saveGraph(self, filepath):
+        options = QFileDialog.Options()
+        filename, _ = QFileDialog.getSaveFileName(
+            self,
+            "Save Graph",
+            self.directory + "/" + filepath,
+            fallbackValues["graphSaveFilter"],
+            options=options,
+        )
+        if filename:
+            QPixmap(filepath).save(filename)
 
     def cellDelete(self):
         for item in self.SpreadsheetArea.selectedItems():
@@ -1138,8 +1216,8 @@ if __name__ == "__main__":
     app.setWindowIcon(QIcon(os.path.join(applicationPath, "solidsheets_icon.ico")))
     app.setOrganizationName("berkaygediz")
     app.setApplicationName("SolidSheets")
-    app.setApplicationDisplayName("SolidSheets 2024.10")
-    app.setApplicationVersion("1.4.2024.10-1")
+    app.setApplicationDisplayName("SolidSheets 2024.10.2")
+    app.setApplicationVersion("1.4.2024.10-2")
     wb = SS_Workbook()
     wb.show()
     sys.exit(app.exec())

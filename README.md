@@ -13,12 +13,12 @@ SolidSheets is a lightweight spreadsheet editor written in Python, utilizing the
 - [x] **File Operations**: Open and save CSV, SSFS (SolidSheets Files) & XLSX (partial).
 - [x] **Printing**: Print or export tables to PDF format.
 - [x] **Editing**: Modify tables with options to delete, edit rows, and columns.
-- [x] **Formula Support**: Includes functions like avg, sum, min, max, count, similargraph, etc.
+- [x] **Formula Support**: Includes functions like avg, sum, min, max, count, similargraph, pointgraph, bargraph, piegraph & histogram.
 - [x] **Customizable Toolbar**: Tailor the interface to your needs.
 - [x] **Performance**: Fast and lightweight with threading support.
 - [x] **User Experience**: Alerts for unsaved changes and supports dark/light mode.
 - [x] **Real-Time Statistics**: Displays live updates on row count, column count, and cell count.
-- [x] **Multilingual**: Available in English, Turkish, German, Spanish, Azerbaijani.
+- [x] **Multilingual**: Available in English, Turkish, German, Spanish, Azerbaijani, Uzbek, Chinese, Korean, Japanese, Arabic, Russian, French, Greek & Hebrew.
 - [x] **Cross-Platform**: Compatible with Windows, macOS, and Linux.
 - [x] **Efficiency**: Designed for power-saving and utilizes hardware acceleration.
 

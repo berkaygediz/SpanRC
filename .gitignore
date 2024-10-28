@@ -173,3 +173,6 @@ cython_debug/
 
 # Built Visual Studio Code Extensions
 *.vsix
+solidsheets_G*.png
+solidsheets_G*.jpg
+solidsheets_G*.jpeg
