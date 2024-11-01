@@ -2,6 +2,7 @@ import csv
 import datetime
 import locale
 import os
+import platform
 import sys
 from datetime import timezone
 
@@ -17,6 +18,15 @@ from PySide6.QtWidgets import *
 
 from modules.globals import *
 from modules.threading import *
+
+try:
+    from ctypes import windll
+
+    windll.shell32.SetCurrentProcessExplicitAppUserModelID(
+        "berkaygediz.SolidSheets.1.5"
+    )
+except ImportError:
+    pass
 
 
 class SS_About(QMainWindow):
@@ -229,13 +239,30 @@ class SS_Workbook(QMainWindow):
 
             if reply == QMessageBox.Yes:
                 self.saveState()
+                self.cleanupCache()
                 event.accept()
             else:
                 self.saveState()
                 event.ignore()
         else:
             self.saveState()
+            self.cleanupCache()
             event.accept()
+
+    def cleanupCache(self):
+        cache_dir = self.controlCacheDir()
+        if os.path.exists(cache_dir):
+            for filename in os.listdir(cache_dir):
+                if filename.startswith("solidsheets_G") and filename.endswith(
+                    (".png", ".jpg", ".jpeg")
+                ):
+                    file_path = os.path.join(cache_dir, filename)
+                    try:
+                        os.remove(file_path)
+                    except Exception as e:
+                        QMessageBox.critical(
+                            self, "Cache Cleanup", f"Error deleting file: {e}"
+                        )
 
     def changeLanguage(self):
         settings = QSettings("berkaygediz", "SolidSheets")
@@ -299,6 +326,8 @@ class SS_Workbook(QMainWindow):
         self.statistics_label.setText(statistics)
         self.statusBar().addPermanentWidget(self.statistics_label)
         self.updateTitle()
+        self.SpreadsheetArea.resizeColumnsToContents()
+        self.SpreadsheetArea.resizeRowsToContents()
 
     def saveState(self):
         settings = QSettings("berkaygediz", "SolidSheets")
@@ -560,8 +589,28 @@ class SS_Workbook(QMainWindow):
         self.dock_widget.setWidget(self.scrollableArea)
         self.addDockWidget(Qt.RightDockWidgetArea, self.dock_widget)
 
-    def toolbarLabel(self, toolbar, text):
+    def toolbarCustomLabel(
+        self,
+        toolbar,
+        text,
+        font_size=None,
+        color="#FFFFFF",
+        background_color=None,
+        icon_path=None,
+    ):
         label = QLabel(f"<b>{text}</b>")
+        label.setStyleSheet(f"font-size: {font_size}px; color: {color};")
+        if background_color:
+            label.setStyleSheet(
+                label.styleSheet() + f"background-color: {background_color};"
+            )
+
+        if icon_path:
+            icon = QIcon(icon_path)
+            icon_label = QLabel()
+            icon_label.setPixmap(icon.pixmap(24, 24))
+            toolbar.addWidget(icon_label)
+
         toolbar.addWidget(label)
 
     def createAction(self, text, status_tip, function, shortcut=None, icon=None):
@@ -699,7 +748,7 @@ class SS_Workbook(QMainWindow):
             translations[settings.value("appLanguage")]["file"]
         )
         self.file_toolbar.setObjectName("File")
-        self.toolbarLabel(
+        self.toolbarCustomLabel(
             self.file_toolbar,
             translations[settings.value("appLanguage")]["file"] + ": ",
         )
@@ -717,7 +766,7 @@ class SS_Workbook(QMainWindow):
             translations[settings.value("appLanguage")]["edit"]
         )
         self.edit_toolbar.setObjectName("Edit")
-        self.toolbarLabel(
+        self.toolbarCustomLabel(
             self.edit_toolbar,
             translations[settings.value("appLanguage")]["edit"] + ": ",
         )
@@ -737,10 +786,11 @@ class SS_Workbook(QMainWindow):
             translations[settings.value("appLanguage")]["interface"]
         )
         self.interface_toolbar.setObjectName("Interface")
-        self.toolbarLabel(
+        self.toolbarCustomLabel(
             self.interface_toolbar,
             translations[settings.value("appLanguage")]["interface"] + ": ",
         )
+
         self.theme_action = self.createAction(
             translations[settings.value("appLanguage")]["darklight"],
             translations[settings.value("appLanguage")]["darklight_message"],
@@ -750,8 +800,8 @@ class SS_Workbook(QMainWindow):
         )
         self.theme_action.setCheckable(True)
         self.theme_action.setChecked(settings.value("appTheme") == "dark")
-
         self.interface_toolbar.addAction(self.theme_action)
+
         self.powersaveraction = QAction(
             translations[settings.value("appLanguage")]["powersaver"],
             self,
@@ -762,42 +812,36 @@ class SS_Workbook(QMainWindow):
         )
         self.powersaveraction.toggled.connect(self.hybridSaver)
 
+        adaptiveResponse = settings.value(
+            "adaptiveResponse", fallbackValues["adaptiveResponse"]
+        )
+        self.powersaveraction.setChecked(adaptiveResponse > 1)
         self.interface_toolbar.addAction(self.powersaveraction)
-        if settings.value("adaptiveResponse") == None:
-            response_exponential = settings.setValue(
-                "adaptiveResponse", fallbackValues["adaptiveResponse"]
-            )
-        else:
-            response_exponential = settings.value(
-                "adaptiveResponse",
-            )
 
-        self.powersaveraction.setChecked(response_exponential > 1)
-        self.interface_toolbar.addAction(self.powersaveraction)
-        self.interface_toolbar.addAction(self.hide_dock_widget_action)
-        self.interface_toolbar.addAction(self.helpAction)
-        self.interface_toolbar.addAction(self.aboutAction)
         self.language_combobox = QComboBox(self)
         self.language_combobox.setStyleSheet("background-color:#000000; color:#FFFFFF;")
         for lcid, name in languages.items():
             self.language_combobox.addItem(name, lcid)
-
         self.language_combobox.currentIndexChanged.connect(self.changeLanguage)
         self.interface_toolbar.addWidget(self.language_combobox)
+
         self.addToolBarBreak()
+
         self.formula_toolbar = self.addToolBar(
             translations[settings.value("appLanguage")]["formula"]
         )
         self.formula_toolbar.setObjectName("Formula")
-        self.toolbarLabel(
+        self.toolbarCustomLabel(
             self.formula_toolbar,
             translations[settings.value("appLanguage")]["formula"] + ": ",
         )
+
         self.formula_edit = QLineEdit()
         self.formula_edit.setPlaceholderText(
             translations[settings.value("appLanguage")]["formula"]
         )
         self.formula_edit.returnPressed.connect(self.computeFormula)
+
         self.formula_button = QPushButton(
             translations[settings.value("appLanguage")]["compute"]
         )
@@ -806,6 +850,7 @@ class SS_Workbook(QMainWindow):
         )
         self.formula_button.setCursor(Qt.PointingHandCursor)
         self.formula_button.clicked.connect(self.computeFormula)
+
         self.formula_toolbar.addWidget(self.formula_edit)
         self.formula_toolbar.addWidget(self.formula_button)
 
@@ -823,6 +868,10 @@ class SS_Workbook(QMainWindow):
             self.formula_edit.setStyleSheet(
                 "background-color: #000000; color: #FFFFFF; font-weight: bold; padding: 10px; border-radius: 10px; border: 1px solid #FFFFFF;"
             )
+
+        self.interface_toolbar.addAction(self.hide_dock_widget_action)
+        self.interface_toolbar.addAction(self.helpAction)
+        self.interface_toolbar.addAction(self.aboutAction)
 
     def SS_createDockwidget(self):
         widget = QWidget()
@@ -1091,10 +1140,30 @@ class SS_Workbook(QMainWindow):
                     selected_range.leftColumn(), selected_range.rightColumn() + 1
                 ):
                     item = self.SpreadsheetArea.item(row, col)
-                    if item and item.text().strip().isdigit():
-                        values.append(int(item.text()))
+                    if item:
+                        try:
+                            value = float(item.text().strip())
+                            values.append(value)
+                        except ValueError:
+                            continue
 
         return values
+
+    def controlCacheDir(self):
+        if platform.system() == "Windows":
+            cache_dir = os.path.join(self.directory, ".sscache")
+        else:
+            cache_dir = os.path.join(self.directory, ".sscache")
+
+        if not os.path.exists(cache_dir):
+            os.makedirs(cache_dir)
+
+            if platform.system() == "Windows":
+                import ctypes
+
+                ctypes.windll.kernel32.SetFileAttributesW(cache_dir, 2)  # Hidden Folder
+
+        return cache_dir
 
     def computeFormula(self):
         QTimer.singleShot(25, self.processFormula)
@@ -1148,26 +1217,45 @@ class SS_Workbook(QMainWindow):
                     .replace(tzinfo=timezone.utc)
                     .timestamp()
                 )
-                plt.savefig(f"solidsheets_G{utc_timestamp}.png")
+                cache_dir = self.controlCacheDir()
+                graph_path = os.path.join(
+                    cache_dir, f"solidsheets_G{utc_timestamp}.png"
+                )
+                plt.savefig(graph_path)
                 plt.close()
                 result = "Graph"
                 end_elasped = datetime.datetime.now()
 
+                graph_container = QWidget()
+                graph_layout = QVBoxLayout(graph_container)
+
                 graph_label = QLabel()
-                graph_label.setPixmap(QPixmap(f"solidsheets_G{utc_timestamp}.png"))
+                graph_label.setPixmap(QPixmap(graph_path))
                 graph_label.setScaledContents(True)
-                self.GraphLog_QVBox.insertWidget(0, graph_label)
+                graph_layout.addWidget(graph_label)
 
                 date_label = QLabel(
-                    f"{datetime_string} ({str((end_elasped - start_elapsed).total_seconds()) + " sec"})"
+                    f"{datetime_string} ({str((end_elasped - start_elapsed).total_seconds())} sec)"
                 )
-                self.GraphLog_QVBox.insertWidget(1, date_label)
+                graph_layout.addWidget(date_label)
+
+                button_layout = QGridLayout()
 
                 save_button = QPushButton("Save")
-                save_button.clicked.connect(
-                    lambda: self.saveGraph(f"solidsheets_G{utc_timestamp}.png")
+                save_button.clicked.connect(lambda: self.saveGraph(graph_path))
+                button_layout.addWidget(save_button, 0, 0)
+
+                delete_button = QPushButton("Delete")
+                delete_button.clicked.connect(
+                    lambda: self.deleteGraph(graph_container, graph_path)
                 )
-                self.GraphLog_QVBox.insertWidget(2, save_button)
+                button_layout.addWidget(delete_button, 0, 1)
+
+                graph_layout.addLayout(button_layout)
+
+                self.GraphLog_QVBox.addWidget(graph_container)
+                graph_count = self.GraphLog_QVBox.count()
+                self.dock_widget.setWindowTitle(f"Graph Log ({graph_count})")
                 self.dock_widget.setVisible(True)
 
             if result != "Graph":
@@ -1189,6 +1277,21 @@ class SS_Workbook(QMainWindow):
         )
         if filename:
             QPixmap(filepath).save(filename)
+
+    def deleteGraph(self, graph_container, filepath):
+        try:
+            self.GraphLog_QVBox.removeWidget(graph_container)
+            graph_container.deleteLater()
+
+            self.dock_widget.update()
+            graph_count = self.GraphLog_QVBox.count()
+            self.dock_widget.setWindowTitle(f"Graph Log ({graph_count})")
+            if os.path.exists(filepath):
+                os.remove(filepath)
+            else:
+                QMessageBox.warning(self, None, "Graph cache not found.")
+        except Exception as e:
+            QMessageBox.critical(self, "Delete Graph", str(e))
 
     def cellDelete(self):
         for item in self.SpreadsheetArea.selectedItems():
@@ -1216,8 +1319,8 @@ if __name__ == "__main__":
     app.setWindowIcon(QIcon(os.path.join(applicationPath, "solidsheets_icon.ico")))
     app.setOrganizationName("berkaygediz")
     app.setApplicationName("SolidSheets")
-    app.setApplicationDisplayName("SolidSheets 2024.10.2")
-    app.setApplicationVersion("1.4.2024.10-2")
+    app.setApplicationDisplayName("SolidSheets 2024.11")
+    app.setApplicationVersion("1.5.2024.11-1")
     wb = SS_Workbook()
     wb.show()
     sys.exit(app.exec())
