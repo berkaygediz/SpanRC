@@ -28,12 +28,17 @@ try:
 except ImportError:
     pass
 
+try:
+    settings = QSettings("berkaygediz", "SolidSheets")
+except:
+    pass
+
 
 class SS_About(QMainWindow):
     def __init__(self, parent=None):
         super(SS_About, self).__init__(parent)
+        self.setWindowIcon(QIcon(fallbackValues["icon"]))
         self.setWindowFlags(Qt.Dialog)
-        self.setWindowIcon(QIcon("solidsheets_icon.ico"))
         self.setWindowModality(Qt.WindowModality.ApplicationModal)
         self.setGeometry(
             QStyle.alignedRect(
@@ -49,11 +54,16 @@ class SS_About(QMainWindow):
         self.about_label.setTextFormat(Qt.RichText)
         self.about_label.setText(
             "<center>"
-            f"<b>{app.applicationDisplayName()}</b><br><br>"
+            f"<b>{QApplication.applicationName()}</b><br><br>"
             "Real-time calculation and formula supported spreadsheet editor.<br>"
             "Made by Berkay Gediz<br><br>"
-            "GNU General Public License v3.0<br>GNU LESSER GENERAL PUBLIC LICENSE v3.0<br>Mozilla Public License Version 2.0<br><br><b>Libraries: </b> pandas-dev/pandas, matplotlib/matplotlib, openpyxl/openpyxl, PySide6, psutil<br><br>"
-            "OpenGL: <b>ON</b></center>"
+            "Licenses:<br>"
+            "- GNU General Public License v3.0<br>"
+            "- GNU LESSER GENERAL PUBLIC LICENSE v3.0<br>"
+            "- Mozilla Public License Version 2.0<br><br>"
+            "<b>Libraries:</b> pandas-dev/pandas, matplotlib/matplotlib, "
+            "openpyxl/openpyxl, PySide6, psutil<br><br>"
+            "<b>OpenGL:</b> <b>ON</b></center>"
         )
         self.setCentralWidget(self.about_label)
 
@@ -62,7 +72,7 @@ class SS_Help(QMainWindow):
     def __init__(self, parent=None):
         super(SS_Help, self).__init__(parent)
         self.setWindowFlags(Qt.Dialog)
-        self.setWindowIcon(QIcon("solidsheets_icon.ico"))
+        self.setWindowIcon(QIcon(fallbackValues["icon"]))
         self.setWindowModality(Qt.WindowModality.WindowModal)
         self.setMinimumSize(480, 360)
 
@@ -89,7 +99,6 @@ class SS_Help(QMainWindow):
         self.help_label.setTextInteractionFlags(Qt.TextSelectableByMouse)
         self.help_label.setTextFormat(Qt.RichText)
 
-        settings = QSettings("berkaygediz", "SolidSheets")
         self.help_label.setText(
             "<html><head><style>"
             "table {border-collapse: collapse; width: 80%; margin: auto;}"
@@ -137,29 +146,37 @@ class SS_UndoCommand(QUndoCommand):
 
     def redo(self):
         item = self.table.item(self.row, self.col)
+        if item is None:
+            return
         self.table.blockSignals(True)
-        item.setText(self.new_data)
-        self.table.blockSignals(False)
+        try:
+            item.setText(self.new_data)
+        finally:
+            self.table.blockSignals(False)
 
     def undo(self):
         item = self.table.item(self.row, self.col)
+        if item is None:
+            return
         self.table.blockSignals(True)
-        item.setText(self.old_data)
-        self.table.blockSignals(False)
+        try:
+            item.setText(self.old_data)
+        finally:
+            self.table.blockSignals(False)
 
 
 class SS_Workbook(QMainWindow):
     def __init__(self, parent=None):
         super(SS_Workbook, self).__init__(parent)
+
         QTimer.singleShot(0, self.initUI)
 
     def initUI(self):
         starttime = datetime.datetime.now()
-        self.setWindowIcon(QIcon("solidsheets_icon.ico"))
+        self.setWindowIcon(QIcon(fallbackValues["icon"]))
         self.setWindowModality(Qt.WindowModality.ApplicationModal)
         self.setMinimumSize(768, 540)
         system_language = locale.getlocale()[1]
-        settings = QSettings("berkaygediz", "SolidSheets")
         if system_language not in languages.items():
             settings.setValue("appLanguage", "1252")
             settings.sync()
@@ -227,7 +244,6 @@ class SS_Workbook(QMainWindow):
         )
 
     def closeEvent(self, event):
-        settings = QSettings("berkaygediz", "SolidSheets")
         if self.is_saved == False:
             reply = QMessageBox.question(
                 self,
@@ -265,7 +281,6 @@ class SS_Workbook(QMainWindow):
                         )
 
     def changeLanguage(self):
-        settings = QSettings("berkaygediz", "SolidSheets")
         settings.setValue("appLanguage", self.language_combobox.currentData())
         settings.sync()
         self.updateTitle()
@@ -273,26 +288,18 @@ class SS_Workbook(QMainWindow):
         self.toolbarTranslate()
 
     def updateTitle(self):
-        settings = QSettings("berkaygediz", "SolidSheets")
         file = (
-            self.file_name
-            if self.file_name
-            else translations[settings.value("appLanguage")]["new_title"]
+            self.file_name or translations[settings.value("appLanguage")]["new_title"]
         )
-        if file.endswith(".xlsx") or file.endswith(".xsrc"):
-            textMode = " - Read Only"
-        else:
-            textMode = ""
-        if self.is_saved == True:
-            asterisk = ""
-        else:
-            asterisk = "*"
+
+        textMode = " - Read Only" if file.endswith((".xlsx", ".xsrc")) else ""
+        asterisk = "*" if not self.is_saved else ""
+
         self.setWindowTitle(
             f"{file}{asterisk}{textMode} — {app.applicationDisplayName()}"
         )
 
     def updateStatistics(self):
-        settings = QSettings("berkaygediz", "SolidSheets")
         row = self.SpreadsheetArea.rowCount()
         column = self.SpreadsheetArea.columnCount()
         selected_cell = (
@@ -330,7 +337,6 @@ class SS_Workbook(QMainWindow):
         self.SpreadsheetArea.resizeRowsToContents()
 
     def saveState(self):
-        settings = QSettings("berkaygediz", "SolidSheets")
         settings.setValue("windowScale", self.saveGeometry())
         settings.setValue("defaultDirectory", self.default_directory)
         settings.setValue("fileName", self.file_name)
@@ -346,7 +352,6 @@ class SS_Workbook(QMainWindow):
         settings.sync()
 
     def restoreState(self):
-        settings = QSettings("berkaygediz", "SolidSheets")
         self.geometry = settings.value("windowScale")
         self.directory = settings.value("defaultDirectory", self.default_directory)
         self.file_name = settings.value("fileName")
@@ -359,20 +364,22 @@ class SS_Workbook(QMainWindow):
 
         if self.file_name and os.path.exists(self.file_name):
             if self.file_name.endswith(".xlsx"):
-                read_file = pd.read_excel(self.file_name)
-                read_file.to_csv(
-                    f"{self.file_name}-transformed.ssfs", index=None, header=True
-                )
-                # df = pd.DataFrame(pd.read_csv(f"{self.file_name}-transformed.ssfs"))
-                self.LoadSpreadsheet(f"{self.file_name}-transformed.ssfs")
+                self.loadSpreadsheetFromExcel(self.file_name)
             else:
-                if (
-                    self.file_name.endswith(".ssfs")
-                    or self.file_name.endswith(".xsrc")
-                    or self.file_name.endswith(".csv")
-                ):
-                    self.LoadSpreadsheet(self.file_name)
+                self.loadSpreadsheetFromOrigin(self.file_name)
 
+        self.setSpreadsheetSize()
+        self.restoreCellProperties()
+        if self.file_name:
+            self.SpreadsheetArea.resizeColumnsToContents()
+            self.SpreadsheetArea.resizeRowsToContents()
+
+        self.restoreCurrentCell()
+        self.adaptiveResponse = settings.value("adaptiveResponse")
+        self.restoreTheme()
+        self.updateTitle()
+
+    def setSpreadsheetSize(self):
         self.SpreadsheetArea.setColumnCount(
             int(settings.value("columnCount", self.SpreadsheetArea.columnCount()))
         )
@@ -380,52 +387,38 @@ class SS_Workbook(QMainWindow):
             int(settings.value("rowCount", self.SpreadsheetArea.rowCount()))
         )
 
+    def restoreCellProperties(self):
         for row in range(self.SpreadsheetArea.rowCount()):
             for column in range(self.SpreadsheetArea.columnCount()):
-                if settings.value(
-                    f"row{row}column{column}rowspan", None
-                ) and settings.value(f"row{row}column{column}columnspan", None):
+                rowspan = settings.value(f"row{row}column{column}rowspan", None)
+                columnspan = settings.value(f"row{row}column{column}columnspan", None)
+                if rowspan and columnspan:
                     self.SpreadsheetArea.setSpan(
                         row,
                         column,
-                        int(settings.value(f"row{row}column{column}rowspan")),
-                        int(settings.value(f"row{row}column{column}columnspan")),
+                        int(rowspan),
+                        int(columnspan),
                     )
+
         for row in range(self.SpreadsheetArea.rowCount()):
             for column in range(self.SpreadsheetArea.columnCount()):
-                if settings.value(f"row{row}column{column}text", None):
+                cell_text = settings.value(f"row{row}column{column}text", None)
+                if cell_text is not None:
                     self.SpreadsheetArea.setItem(
                         row,
                         column,
-                        QTableWidgetItem(settings.value(f"row{row}column{column}text")),
+                        QTableWidgetItem(cell_text),
                     )
 
-        if self.file_name != None:
-            self.SpreadsheetArea.resizeColumnsToContents()
-            self.SpreadsheetArea.resizeRowsToContents()
-
-        self.SpreadsheetArea.setCurrentCell(
-            int(settings.value("currentRow", 0)),
-            int(settings.value("currentColumn", 0)),
-        )
+    def restoreCurrentCell(self):
+        current_row = int(settings.value("currentRow", 0))
+        current_column = int(settings.value("currentColumn", 0))
+        self.SpreadsheetArea.setCurrentCell(current_row, current_column)
         self.SpreadsheetArea.scrollToItem(
-            self.SpreadsheetArea.item(
-                int(settings.value("currentRow", 0)),
-                int(settings.value("currentColumn", 0)),
-            )
+            self.SpreadsheetArea.item(current_row, current_column)
         )
-
-        if self.file_name:
-            self.is_saved = True
-        else:
-            self.is_saved = False
-
-        self.adaptiveResponse = settings.value("adaptiveResponse")
-        self.restoreTheme(),
-        self.updateTitle()
 
     def restoreTheme(self):
-        settings = QSettings("berkaygediz", "SolidSheets")
         if settings.value("appTheme") == "dark":
             self.setPalette(self.dark_theme)
         else:
@@ -436,24 +429,23 @@ class SS_Workbook(QMainWindow):
         self.light_theme = QPalette()
         self.dark_theme = QPalette()
 
-        self.light_theme.setColor(QPalette.Window, QColor(3, 65, 135))
+        self.light_theme.setColor(QPalette.Window, QColor(50, 50, 50))
         self.light_theme.setColor(QPalette.WindowText, QColor(255, 255, 255))
         self.light_theme.setColor(QPalette.Base, QColor(255, 255, 255))
         self.light_theme.setColor(QPalette.Text, QColor(0, 0, 0))
-        self.light_theme.setColor(QPalette.Highlight, QColor(105, 117, 156))
-        self.light_theme.setColor(QPalette.Button, QColor(230, 230, 230))
+        self.light_theme.setColor(QPalette.Highlight, QColor(173, 216, 230))
+        self.light_theme.setColor(QPalette.Button, QColor(220, 220, 220))
         self.light_theme.setColor(QPalette.ButtonText, QColor(0, 0, 0))
 
-        self.dark_theme.setColor(QPalette.Window, QColor(35, 39, 52))
+        self.dark_theme.setColor(QPalette.Window, QColor(50, 50, 50))
         self.dark_theme.setColor(QPalette.WindowText, QColor(255, 255, 255))
-        self.dark_theme.setColor(QPalette.Base, QColor(80, 85, 122))
+        self.dark_theme.setColor(QPalette.Base, QColor(70, 70, 70))
         self.dark_theme.setColor(QPalette.Text, QColor(255, 255, 255))
-        self.dark_theme.setColor(QPalette.Highlight, QColor(105, 117, 156))
-        self.dark_theme.setColor(QPalette.Button, QColor(0, 0, 0))
+        self.dark_theme.setColor(QPalette.Highlight, QColor(100, 100, 255))
+        self.dark_theme.setColor(QPalette.Button, QColor(60, 60, 60))
         self.dark_theme.setColor(QPalette.ButtonText, QColor(255, 255, 255))
 
     def themeAction(self):
-        settings = QSettings("berkaygediz", "SolidSheets")
         if self.palette() == self.light_theme:
             self.setPalette(self.dark_theme)
             settings.setValue("appTheme", "dark")
@@ -463,11 +455,7 @@ class SS_Workbook(QMainWindow):
         self.toolbarTheme()
 
     def toolbarTheme(self):
-        palette = self.palette()
-        if palette == self.light_theme:
-            text_color = QColor(255, 255, 255)
-        else:
-            text_color = QColor(255, 255, 255)
+        text_color = QColor(255, 255, 255)
 
         for toolbar in self.findChildren(QToolBar):
             for action in toolbar.actions():
@@ -478,115 +466,61 @@ class SS_Workbook(QMainWindow):
                     toolbar.setPalette(action_color)
 
     def toolbarTranslate(self):
-        settings = QSettings("berkaygediz", "SolidSheets")
         system_language = locale.getlocale()[1]
         if system_language not in languages.keys():
             settings.setValue("appLanguage", "1252")
             settings.sync()
-        self.language = settings.value("appLanguage")
-        self.newAction.setText(translations[settings.value("appLanguage")]["new"])
-        self.newAction.setStatusTip(
-            translations[settings.value("appLanguage")]["new_title"]
-        )
-        self.openAction.setText(translations[settings.value("appLanguage")]["open"])
-        self.openAction.setStatusTip(
-            translations[settings.value("appLanguage")]["open_title"]
-        )
-        self.saveAction.setText(translations[settings.value("appLanguage")]["save"])
-        self.saveAction.setStatusTip(
-            translations[settings.value("appLanguage")]["save_title"]
-        )
-        self.saveasAction.setText(
-            translations[settings.value("appLanguage")]["save_as"]
-        )
-        self.saveasAction.setStatusTip(
-            translations[settings.value("appLanguage")]["save_as_title"]
-        )
-        self.printAction.setText(translations[settings.value("appLanguage")]["print"])
-        self.printAction.setStatusTip(
-            translations[settings.value("appLanguage")]["print_title"]
-        )
-        self.deleteAction.setText(translations[settings.value("appLanguage")]["delete"])
-        self.deleteAction.setStatusTip(
-            translations[settings.value("appLanguage")]["delete_title"]
-        )
-        self.aboutAction.setText(translations[settings.value("appLanguage")]["about"])
-        self.aboutAction.setStatusTip(
-            translations[settings.value("appLanguage")]["about_title"]
-        )
-        self.undoAction.setText(translations[settings.value("appLanguage")]["undo"])
-        self.undoAction.setStatusTip(
-            translations[settings.value("appLanguage")]["undo_title"]
-        )
-        self.redoAction.setText(translations[settings.value("appLanguage")]["redo"])
-        self.redoAction.setStatusTip(
-            translations[settings.value("appLanguage")]["redo_title"]
-        )
-        self.addrowAction.setText(
-            translations[settings.value("appLanguage")]["add_row"]
-        )
-        self.addrowAction.setStatusTip(
-            translations[settings.value("appLanguage")]["add_row"]
-        )
-        self.addcolumnAction.setText(
-            translations[settings.value("appLanguage")]["add_column"]
-        )
-        self.addcolumnAction.setStatusTip(
-            translations[settings.value("appLanguage")]["add_column"]
-        )
-        self.addrowaboveAction.setText(
-            translations[settings.value("appLanguage")]["add_row_above"]
-        )
-        self.addrowaboveAction.setStatusTip(
-            translations[settings.value("appLanguage")]["add_row_above"]
-        )
-        self.addcolumnleftAction.setText(
-            translations[settings.value("appLanguage")]["add_column_left"]
-        )
-        self.addcolumnleftAction.setStatusTip(
-            translations[settings.value("appLanguage")]["add_column_left"]
-        )
-        self.darklightAction.setText(
-            translations[settings.value("appLanguage")]["darklight"]
-        )
-        self.darklightAction.setStatusTip(
-            translations[settings.value("appLanguage")]["darklight_message"]
-        )
-        self.powersaveraction.setText(
-            translations[settings.value("appLanguage")]["powersaver"]
-        )
-        self.powersaveraction.setStatusTip(
-            translations[settings.value("appLanguage")]["powersaver_message"]
-        )
+
+        lang = settings.value("appLanguage")
+
+        actions = [
+            ("newAction", "new"),
+            ("openAction", "open"),
+            ("saveAction", "save"),
+            ("saveasAction", "save_as"),
+            ("printAction", "print"),
+            ("deleteAction", "delete"),
+            ("aboutAction", "about"),
+            ("undoAction", "undo"),
+            ("redoAction", "redo"),
+            ("addrowAction", "add_row"),
+            ("addcolumnAction", "add_column"),
+            ("addrowaboveAction", "add_row_above"),
+            ("addcolumnleftAction", "add_column_left"),
+            ("darklightAction", "darklight"),
+            ("powersaveraction", "powersaver"),
+        ]
+
+        for action_name, translation_key in actions:
+            action = getattr(self, action_name)
+            action.setText(translations[lang][translation_key])
+            action.setStatusTip(
+                translations[lang][f"{translation_key}_title"]
+                if f"{translation_key}_title" in translations[lang]
+                else translations[lang][translation_key]
+            )
 
     def initDock(self):
-        settings = QSettings("berkaygediz", "SolidSheets")
-        settings.sync()
         self.statistics_label = QLabel()
         self.dock_widget = QDockWidget("Graph Log", self)
         self.dock_widget.setObjectName("Graph Log")
         self.dock_widget.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
 
         self.scrollableArea = QScrollArea()
-        self.GraphLog_QVBox = QVBoxLayout()
-
-        self.graph_labels = []
-        self.dock_widget.setObjectName("GraphLog")
-        self.dock_widget.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
-
-        self.dock_widget.setWidget(self.scrollableArea)
-
-        self.dock_widget.setFeatures(
-            QDockWidget.NoDockWidgetFeatures | QDockWidget.DockWidgetClosable
-        )
+        self.scrollableArea.setWidgetResizable(True)
         self.scrollableArea.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         self.scrollableArea.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-        self.scrollableArea.setWidgetResizable(True)
+        self.GraphLog_QVBox = QVBoxLayout()
+
         scroll_contents = QWidget()
         scroll_contents.setLayout(self.GraphLog_QVBox)
         self.scrollableArea.setWidget(scroll_contents)
 
         self.dock_widget.setWidget(self.scrollableArea)
+        self.dock_widget.setFeatures(
+            QDockWidget.NoDockWidgetFeatures | QDockWidget.DockWidgetClosable
+        )
+
         self.addDockWidget(Qt.RightDockWidgetArea, self.dock_widget)
 
     def toolbarCustomLabel(
@@ -620,129 +554,140 @@ class SS_Workbook(QMainWindow):
         if shortcut:
             action.setShortcut(shortcut)
         if icon:
-            action.setIcon(QIcon(""))
+            action.setIcon(QIcon(icon))
         return action
 
     def initActions(self):
-        settings = QSettings("berkaygediz", "SolidSheets")
-        self.newAction = self.createAction(
-            translations[settings.value("appLanguage")]["new"],
-            translations[settings.value("appLanguage")]["new_title"],
-            self.new,
-            QKeySequence.New,
-            "",
-        )
-        self.openAction = self.createAction(
-            translations[settings.value("appLanguage")]["open"],
-            translations[settings.value("appLanguage")]["open_title"],
-            self.Open,
-            QKeySequence.Open,
-            "",
-        )
-        self.saveAction = self.createAction(
-            translations[settings.value("appLanguage")]["save"],
-            translations[settings.value("appLanguage")]["save_title"],
-            self.Save,
-            QKeySequence.Save,
-            "",
-        )
-        self.saveasAction = self.createAction(
-            translations[settings.value("appLanguage")]["save_as"],
-            translations[settings.value("appLanguage")]["save_as_title"],
-            self.SaveAs,
-            QKeySequence.SaveAs,
-            "",
-        )
-        self.printAction = self.createAction(
-            translations[settings.value("appLanguage")]["print"],
-            translations[settings.value("appLanguage")]["print_title"],
-            self.PrintSpreadsheet,
-            QKeySequence.Print,
-            "",
-        )
-        self.deleteAction = self.createAction(
-            translations[settings.value("appLanguage")]["delete"],
-            translations[settings.value("appLanguage")]["delete_title"],
-            self.cellDelete,
-            QKeySequence.Delete,
-            "",
-        )
-        self.addrowAction = self.createAction(
-            translations[settings.value("appLanguage")]["add_row"],
-            translations[settings.value("appLanguage")]["add_row_title"],
-            self.rowAdd,
-            QKeySequence("Ctrl+Shift+R"),
-            "",
-        )
-        self.addcolumnAction = self.createAction(
-            translations[settings.value("appLanguage")]["add_column"],
-            translations[settings.value("appLanguage")]["add_column_title"],
-            self.columnAdd,
-            QKeySequence("Ctrl+Shift+C"),
-            "",
-        )
-        self.addrowaboveAction = self.createAction(
-            translations[settings.value("appLanguage")]["add_row_above"],
-            translations[settings.value("appLanguage")]["add_row_above_title"],
-            self.rowAddAbove,
-            QKeySequence("Ctrl+Shift+T"),
-            "",
-        )
-        self.addcolumnleftAction = self.createAction(
-            translations[settings.value("appLanguage")]["add_column_left"],
-            translations[settings.value("appLanguage")]["add_column_left_title"],
-            self.columnAddLeft,
-            QKeySequence("Ctrl+Shift+L"),
-            "",
-        )
+        lang = settings.value("appLanguage")
 
-        self.hide_dock_widget_action = self.createAction(
-            "Graph Log",
-            "Graph Log",
-            self.SS_toggleDock,
-            QKeySequence("Ctrl+H"),
-            "",
-        )
+        action_definitions = [
+            {
+                "name": "newAction",
+                "text": translations[lang]["new"],
+                "status_tip": translations[lang]["new_title"],
+                "function": self.new,
+                "shortcut": QKeySequence.New,
+            },
+            {
+                "name": "openAction",
+                "text": translations[lang]["open"],
+                "status_tip": translations[lang]["open_title"],
+                "function": self.openFile,
+                "shortcut": QKeySequence.Open,
+            },
+            {
+                "name": "saveAction",
+                "text": translations[lang]["save"],
+                "status_tip": translations[lang]["save_title"],
+                "function": self.saveFile,
+                "shortcut": QKeySequence.Save,
+            },
+            {
+                "name": "saveasAction",
+                "text": translations[lang]["save_as"],
+                "status_tip": translations[lang]["save_as_title"],
+                "function": self.saveFileAs,
+                "shortcut": QKeySequence.SaveAs,
+            },
+            {
+                "name": "printAction",
+                "text": translations[lang]["print"],
+                "status_tip": translations[lang]["print_title"],
+                "function": self.printSpreadsheet,
+                "shortcut": QKeySequence.Print,
+            },
+            {
+                "name": "deleteAction",
+                "text": translations[lang]["delete"],
+                "status_tip": translations[lang]["delete_title"],
+                "function": self.cellDelete,
+                "shortcut": QKeySequence.Delete,
+            },
+            {
+                "name": "addrowAction",
+                "text": translations[lang]["add_row"],
+                "status_tip": translations[lang]["add_row_title"],
+                "function": self.rowAdd,
+                "shortcut": QKeySequence("Ctrl+Shift+R"),
+            },
+            {
+                "name": "addcolumnAction",
+                "text": translations[lang]["add_column"],
+                "status_tip": translations[lang]["add_column_title"],
+                "function": self.columnAdd,
+                "shortcut": QKeySequence("Ctrl+Shift+C"),
+            },
+            {
+                "name": "addrowaboveAction",
+                "text": translations[lang]["add_row_above"],
+                "status_tip": translations[lang]["add_row_above_title"],
+                "function": self.rowAddAbove,
+                "shortcut": QKeySequence("Ctrl+Shift+T"),
+            },
+            {
+                "name": "addcolumnleftAction",
+                "text": translations[lang]["add_column_left"],
+                "status_tip": translations[lang]["add_column_left_title"],
+                "function": self.columnAddLeft,
+                "shortcut": QKeySequence("Ctrl+Shift+L"),
+            },
+            {
+                "name": "hide_dock_widget_action",
+                "text": "Graph Log",
+                "status_tip": "Graph Log",
+                "function": self.toggleDock,
+                "shortcut": QKeySequence("Ctrl+H"),
+            },
+            {
+                "name": "helpAction",
+                "text": translations[lang]["help"],
+                "status_tip": translations[lang]["help"],
+                "function": self.viewHelp,
+                "shortcut": QKeySequence("Ctrl+H"),
+            },
+            {
+                "name": "aboutAction",
+                "text": translations[lang]["about"],
+                "status_tip": translations[lang]["about_title"],
+                "function": self.viewAbout,
+                "shortcut": QKeySequence.HelpContents,
+            },
+            {
+                "name": "undoAction",
+                "text": translations[lang]["undo"],
+                "status_tip": translations[lang]["undo_title"],
+                "function": self.undo_stack.undo,
+                "shortcut": QKeySequence.Undo,
+            },
+            {
+                "name": "redoAction",
+                "text": translations[lang]["redo"],
+                "status_tip": translations[lang]["redo_title"],
+                "function": self.undo_stack.redo,
+                "shortcut": QKeySequence.Redo,
+            },
+            {
+                "name": "darklightAction",
+                "text": translations[lang]["darklight"],
+                "status_tip": translations[lang]["darklight_message"],
+                "function": self.themeAction,
+                "shortcut": QKeySequence("Ctrl+D"),
+            },
+        ]
 
-        self.helpAction = self.createAction(
-            translations[settings.value("appLanguage")]["help"],
-            translations[settings.value("appLanguage")]["help"],
-            self.viewHelp,
-            QKeySequence("Ctrl+H"),
-            "",
-        )
-
-        self.aboutAction = self.createAction(
-            translations[settings.value("appLanguage")]["about"],
-            translations[settings.value("appLanguage")]["about_title"],
-            self.viewAbout,
-            QKeySequence.HelpContents,
-            "",
-        )
-        self.undoAction = self.createAction(
-            translations[settings.value("appLanguage")]["undo"],
-            translations[settings.value("appLanguage")]["undo_title"],
-            self.undo_stack.undo,
-            QKeySequence.Undo,
-            "",
-        )
-        self.redoAction = self.createAction(
-            translations[settings.value("appLanguage")]["redo"],
-            translations[settings.value("appLanguage")]["redo_title"],
-            self.undo_stack.redo,
-            QKeySequence.Redo,
-            "",
-        )
-        self.darklightAction = self.createAction(
-            translations[settings.value("appLanguage")]["darklight"],
-            translations[settings.value("appLanguage")]["darklight_message"],
-            self.themeAction,
-            QKeySequence("Ctrl+D"),
-            "",
-        )
+        for action_def in action_definitions:
+            setattr(
+                self,
+                action_def["name"],
+                self.createAction(
+                    action_def["text"],
+                    action_def["status_tip"],
+                    action_def["function"],
+                    action_def["shortcut"],
+                ),
+            )
 
     def initToolbar(self):
-        settings = QSettings("berkaygediz", "SolidSheets")
 
         self.file_toolbar = self.addToolBar(
             translations[settings.value("appLanguage")]["file"]
@@ -873,35 +818,25 @@ class SS_Workbook(QMainWindow):
         self.interface_toolbar.addAction(self.helpAction)
         self.interface_toolbar.addAction(self.aboutAction)
 
-    def SS_createDockwidget(self):
+    def createDockwidget(self):
         widget = QWidget()
-        layout = QVBoxLayout()
-        widget.setLayout(layout)
-        self.statistics = QLabel()
-        self.statistics.setText("Statistics")
+        layout = QVBoxLayout(widget)
+        self.statistics = QLabel("Statistics")
         layout.addWidget(self.statistics)
         return widget
 
-    def SS_toggleDock(self):
-        if self.dock_widget.isHidden():
-            self.dock_widget.show()
-        else:
-            self.dock_widget.hide()
+    def toggleDock(self):
+        self.dock_widget.setVisible(not self.dock_widget.isVisible())
 
     def hybridSaver(self, checked):
-        settings = QSettings("berkaygediz", "SolidSheets")
         if checked:
             battery = psutil.sensors_battery()
             if battery:
-                if battery.percent <= 35 and not battery.power_plugged:
-                    # Ultra
-                    self.adaptiveResponse = 12
-                else:
-                    # Standard
-                    self.adaptiveResponse = 6
+                self.adaptiveResponse = (
+                    12 if battery.percent <= 35 and not battery.power_plugged else 6
+                )
             else:
-                # Global Standard
-                self.adaptiveResponse = 3
+                self.adaptiveResponse = 3  # Global Standard
         else:
             self.adaptiveResponse = fallbackValues["adaptiveResponse"]
 
@@ -909,15 +844,8 @@ class SS_Workbook(QMainWindow):
         settings.sync()
 
     def new(self):
-        settings = QSettings("berkaygediz", "SolidSheets")
-        if self.is_saved == True:
-            self.SpreadsheetArea.clearContents()
-            self.SpreadsheetArea.setRowCount(50)
-            self.SpreadsheetArea.setColumnCount(100)
-            self.directory = self.default_directory
-            self.file_name = None
-            self.is_saved = False
-            self.updateTitle()
+        if self.is_saved:
+            self.resetSpreadsheet()
         else:
             reply = QMessageBox.question(
                 self,
@@ -928,24 +856,19 @@ class SS_Workbook(QMainWindow):
             )
 
             if reply == QMessageBox.Yes:
-                self.SpreadsheetArea.clearContents()
-                self.SpreadsheetArea.setRowCount(50)
-                self.SpreadsheetArea.setColumnCount(100)
-                self.setWindowTitle(
-                    translations[settings.value("appLanguage")]["new_title"]
-                    + f" — {app.applicationDisplayName()}"
-                )
-                self.directory = self.default_directory
-                self.file_name = None
-                self.is_saved = False
-                self.updateTitle()
-                return True
-            else:
-                pass
+                self.resetSpreadsheet()
 
-    def Open(self):
-        settings = QSettings("berkaygediz", "SolidSheets")
-        if self.is_saved is False:
+    def resetSpreadsheet(self):
+        self.SpreadsheetArea.clearContents()
+        self.SpreadsheetArea.setRowCount(50)
+        self.SpreadsheetArea.setColumnCount(100)
+        self.directory = self.default_directory
+        self.file_name = None
+        self.is_saved = False
+        self.updateTitle()
+
+    def openFile(self):
+        if not self.is_saved:
             reply = QMessageBox.question(
                 self,
                 app.applicationDisplayName(),
@@ -953,20 +876,16 @@ class SS_Workbook(QMainWindow):
                 QMessageBox.Yes | QMessageBox.No,
                 QMessageBox.No,
             )
-
             if reply == QMessageBox.Yes:
                 self.saveState()
-                return self.OpenProcess()
-        else:
-            return self.OpenProcess()
 
-    def OpenProcess(self):
-        settings = QSettings("berkaygediz", "SolidSheets")
+        return self.openFileProcess()
+
+    def openFileProcess(self):
         options = QFileDialog.Options()
         selected_file, _ = QFileDialog.getOpenFileName(
             self,
-            translations[settings.value("appLanguage")]["open_title"]
-            + f" — {app.applicationDisplayName()}",
+            f"{translations[settings.value('appLanguage')]['open_title']} — {app.applicationDisplayName()}",
             self.directory,
             fallbackValues["readFilter"],
             options=options,
@@ -977,54 +896,58 @@ class SS_Workbook(QMainWindow):
 
             if self.file_name.endswith(".xlsx"):
                 try:
-                    read_file = pd.read_excel(self.file_name)
-                    read_file.to_csv(f"{self.file_name}.ssfs", index=None, header=True)
-                    # df = pd.DataFrame(pd.read_csv(f"{self.file_name}.ssfs"))
-                    self.LoadSpreadsheet(f"{self.file_name}.ssfs")
+                    self.loadSpreadsheetFromExcel(self.file_name)
                 except:
                     QMessageBox.warning(self, None, "Conversion failed.")
+                    raise
             else:
                 if (
                     self.file_name.endswith(".ssfs")
                     or self.file_name.endswith(".xsrc")
                     or self.file_name.endswith(".csv")
                 ):
-                    self.LoadSpreadsheet(self.file_name)
-
+                    self.loadSpreadsheet(self.file_name)
             self.directory = os.path.dirname(self.file_name)
             self.is_saved = True
             self.updateTitle()
-        else:
-            pass
 
-    def LoadSpreadsheet(self, file_path):
+    def loadSpreadsheetFromExcel(self, file_name):
+        try:
+            read_file = pd.read_excel(file_name)
+            read_file.to_csv(f"{file_name}.ssfs", index=None, header=True)
+            self.loadSpreadsheet(f"{file_name}.ssfs")
+        except Exception as e:
+            QMessageBox.warning(self, None, f"Conversion failed: {e}")
+
+    def loadSpreadsheetFromOrigin(self, file_name):
+        if file_name.endswith((".ssfs", ".xsrc", ".csv")):
+            self.loadSpreadsheet(file_name)
+
+    def loadSpreadsheet(self, file_path):
         with open(file_path, "r") as file:
             reader = csv.reader(file)
-            self.SpreadsheetArea.clearSpans()
-            self.SpreadsheetArea.setRowCount(0)
-            self.SpreadsheetArea.setColumnCount(0)
-            for row in reader:
-                rowPosition = self.SpreadsheetArea.rowCount()
-                self.SpreadsheetArea.insertRow(rowPosition)
-                self.SpreadsheetArea.setColumnCount(len(row))
-                for column in range(len(row)):
-                    item = QTableWidgetItem(row[column])
-                    self.SpreadsheetArea.setItem(rowPosition, column, item)
+            data = list(reader)
+            self.SpreadsheetArea.setRowCount(len(data))
+            self.SpreadsheetArea.setColumnCount(len(data[0]) if data else 0)
+
+            for row in range(len(data)):
+                for column in range(len(data[row])):
+                    item = QTableWidgetItem(data[row][column])
+                    self.SpreadsheetArea.setItem(row, column, item)
+
         self.SpreadsheetArea.resizeColumnsToContents()
         self.SpreadsheetArea.resizeRowsToContents()
 
-    def Save(self):
+    def saveFile(self):
         if self.is_saved == False:
-            self.SaveProcess()
+            self.saveFileProcess()
         elif self.file_name == None:
-            self.SaveAs()
+            self.saveFileAs()
         else:
-            self.SaveProcess()
+            self.saveFileProcess()
 
-    def SaveAs(self):
+    def saveFileAs(self):
         options = QFileDialog.Options()
-        settings = QSettings("berkaygediz", "SolidSheets")
-        options |= QFileDialog.ReadOnly
         selected_file, _ = QFileDialog.getSaveFileName(
             self,
             translations[settings.value("appLanguage")]["save_as_title"]
@@ -1036,87 +959,84 @@ class SS_Workbook(QMainWindow):
         if selected_file:
             self.file_name = selected_file
             self.directory = os.path.dirname(self.file_name)
-            self.SaveProcess()
+            self.saveFileProcess()
             return True
-        else:
-            return False
+        return False
 
-    def SaveProcess(self):
+    def saveFileProcess(self):
         if not self.file_name:
-            self.SaveAs()
-        else:
-            if self.file_name.lower().endswith(".xlsx"):
-                None
-            else:
-                with open(self.file_name, "w", newline="") as file:
-                    writer = csv.writer(file)
-                    for rowid in range(self.SpreadsheetArea.rowCount()):
-                        row = []
-                        for colid in range(self.SpreadsheetArea.columnCount()):
-                            item = self.SpreadsheetArea.item(rowid, colid)
-                            if item is not None:
-                                row.append(item.text())
-                            else:
-                                row.append("")
-                        writer.writerow(row)
+            self.saveFileAs()
+            self.status_bar.showMessage("Saved.", 2000)
 
-        self.status_bar.showMessage("Saved.", 2000)
+        else:
+            with open(self.file_name, "w", newline="") as file:
+                writer = csv.writer(file)
+                for rowid in range(self.SpreadsheetArea.rowCount()):
+                    row = [
+                        (
+                            self.SpreadsheetArea.item(rowid, colid).text()
+                            if self.SpreadsheetArea.item(rowid, colid) is not None
+                            else ""
+                        )
+                        for colid in range(self.SpreadsheetArea.columnCount())
+                    ]
+                    writer.writerow(row)
+                self.status_bar.showMessage("Saved.", 2000)
+
         self.is_saved = True
         self.updateTitle()
 
-    def PrintSpreadsheet(self):
-        settings = QSettings("berkaygediz", "SolidSheets")
+    def printSpreadsheet(self):
         selected_ranges = self.SpreadsheetArea.selectedRanges()
 
-        if selected_ranges:
-            printer = QPrinter(QPrinter.HighResolution)
-            printer.setPageOrientation(QPageLayout.Orientation.Landscape)
-            printer.setPageMargins(QMargins(0, 0, 0, 0), QPageLayout.Millimeter)
-
-            printer.setFullPage(True)
-            printer.setDocName(self.file_name)
-
-            preview_dialog = QPrintPreviewDialog(printer, self)
-            preview_dialog.paintRequested.connect(self.PrintSelectedCells)
-            preview_dialog.exec()
-        else:
+        if not selected_ranges:
             QMessageBox.warning(
                 self, None, translations[settings.value("appLanguage")]["print_warning"]
             )
+            return
 
-    def PrintSelectedCells(self, printer):
+        printer = self.setupPrinter()
+        preview_dialog = QPrintPreviewDialog(printer, self)
+        preview_dialog.paintRequested.connect(self.printSelectedCells)
+        preview_dialog.exec()
+
+    def setupPrinter(self):
+        printer = QPrinter(QPrinter.HighResolution)
+        printer.setPageOrientation(QPageLayout.Orientation.Landscape)
+        printer.setPageMargins(QMargins(0, 0, 0, 0), QPageLayout.Millimeter)
+        printer.setFullPage(True)
+        printer.setDocName(self.file_name)
+        return printer
+
+    def printSelectedCells(self, printer):
         painter = QPainter(printer)
-        rect = painter.viewport()
+        rect = painter.viewport().adjusted(20, 20, -20, -20)
 
-        rect.adjust(20, 20, -20, -20)
-
-        selected_ranges = self.SpreadsheetArea.selectedRanges()
-
-        for range_ in selected_ranges:
-            for row in range(range_.topRow(), range_.bottomRow() + 1):
-                for column in range(range_.leftColumn(), range_.rightColumn() + 1):
-                    item = self.SpreadsheetArea.item(row, column)
-                    if item:
-                        cell_width = self.SpreadsheetArea.columnWidth(column)
-                        cell_height = self.SpreadsheetArea.rowHeight(row)
-
-                        x = rect.x() + (column - range_.leftColumn()) * cell_width
-                        y = rect.y() + (row - range_.topRow()) * cell_height
-
-                        painter.fillRect(
-                            QRect(x, y, cell_width, cell_height), Qt.lightGray
-                        )
-                        painter.drawRect(QRect(x, y, cell_width, cell_height))
-
-                        painter.setPen(Qt.black)
-                        painter.setFont(QFont("Arial", 10))
-                        painter.drawText(
-                            QRect(x, y, cell_width, cell_height),
-                            Qt.AlignCenter,
-                            item.text(),
-                        )
+        for range_ in self.SpreadsheetArea.selectedRanges():
+            self.paintSelectedRange(painter, rect, range_)
 
         painter.end()
+
+    def paintSelectedRange(self, painter, rect, range_):
+        for row in range(range_.topRow(), range_.bottomRow() + 1):
+            for column in range(range_.leftColumn(), range_.rightColumn() + 1):
+                item = self.SpreadsheetArea.item(row, column)
+                if item:
+                    self.drawCell(painter, rect, row, column, item.text())
+
+    def drawCell(self, painter, rect, row, column, text):
+        cell_width = self.SpreadsheetArea.columnWidth(column)
+        cell_height = self.SpreadsheetArea.rowHeight(row)
+
+        x = rect.x() + (column - rect.left()) * cell_width
+        y = rect.y() + (row - rect.top()) * cell_height
+
+        painter.fillRect(QRect(x, y, cell_width, cell_height), Qt.lightGray)
+        painter.drawRect(QRect(x, y, cell_width, cell_height))
+
+        painter.setPen(Qt.black)
+        painter.setFont(QFont("Arial", 10))
+        painter.drawText(QRect(x, y, cell_width, cell_height), Qt.AlignCenter, text)
 
     def viewAbout(self):
         self.viewAbout = SS_About()
@@ -1253,7 +1173,7 @@ class SS_Workbook(QMainWindow):
 
                 graph_layout.addLayout(button_layout)
 
-                self.GraphLog_QVBox.addWidget(graph_container)
+                self.GraphLog_QVBox.insertWidget(0, graph_container)
                 graph_count = self.GraphLog_QVBox.count()
                 self.dock_widget.setWindowTitle(f"Graph Log ({graph_count})")
                 self.dock_widget.setVisible(True)
@@ -1313,10 +1233,10 @@ class SS_Workbook(QMainWindow):
 if __name__ == "__main__":
     if getattr(sys, "frozen", False):
         applicationPath = sys._MEIPASS
-    elif __file__:
+    else:
         applicationPath = os.path.dirname(__file__)
     app = QApplication(sys.argv)
-    app.setWindowIcon(QIcon(os.path.join(applicationPath, "solidsheets_icon.ico")))
+    app.setWindowIcon(QIcon(os.path.join(applicationPath, fallbackValues["icon"])))
     app.setOrganizationName("berkaygediz")
     app.setApplicationName("SolidSheets")
     app.setApplicationDisplayName("SolidSheets 2024.11")

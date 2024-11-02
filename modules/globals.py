@@ -1,6 +1,7 @@
 from PySide6.QtCore import *
 
 fallbackValues = {
+    "icon": "solidsheets_icon.ico",
     "currentRow": 0,
     "currentColumn": 0,
     "rowCount": 50,
