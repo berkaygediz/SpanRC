@@ -891,9 +891,10 @@ class SS_Workbook(QMainWindow):
         )
 
         if not current_name or current_name.lower() == "unnamed":
-            msg_text = f"Bu sütun isimsiz. Yeni bir isim vermek ister misiniz?"
+            msg_text = "This column is unnamed. Would you like to give it a new name?"
         else:
-            msg_text = f"'{current_name}' sütunu ile ne yapmak istersiniz?"
+            msg_text = f"What would you like to do with the '{current_name}' column?"
+
 
         ccn_msg = QMessageBox(self)
         ccn_msg.setText(msg_text)
