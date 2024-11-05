@@ -30,16 +30,59 @@ except ImportError:
 
 try:
     settings = QSettings("berkaygediz", "SolidSheets")
+    lang = settings.value("appLanguage")
 except:
     pass
+
+
+class SS_ControlInfo(QMainWindow):
+    def __init__(self, parent=None):
+        super(SS_ControlInfo, self).__init__(parent)
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+        self.setWindowIcon(QIcon(fallbackValues["icon"]))
+        self.setWindowModality(Qt.WindowModality.ApplicationModal)
+        self.setWindowFlags(Qt.WindowType.FramelessWindowHint)
+
+        screen = QGuiApplication.primaryScreen().availableGeometry()
+        self.setGeometry(
+            QStyle.alignedRect(
+                Qt.LayoutDirection.LeftToRight,
+                Qt.AlignmentFlag.AlignCenter,
+                QSize(int(screen.width() * 0.2), int(screen.height() * 0.2)),
+                screen,
+            )
+        )
+        self.setStyleSheet("background-color: transparent;")
+        self.setWindowOpacity(0.75)
+
+        self.widget_central = QWidget(self)
+        self.layout_central = QVBoxLayout(self.widget_central)
+
+        self.title = QLabel("SolidSheets", self)
+        self.title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.title.setFont(QFont("Roboto", 30))
+        self.title.setStyleSheet(
+            "background-color: #4CAF50; color: #FFFFFF; font-weight: bold; font-size: 30px; border-radius: 25px; border: 1px solid #388E3C;"
+        )
+
+        self.layout_central.addWidget(self.title)
+        self.setCentralWidget(self.widget_central)
+
+        QTimer.singleShot(500, self.showWB)
+
+    def showWB(self):
+        self.hide()
+        self.wb_window = SS_Workbook()
+        self.wb_window.show()
 
 
 class SS_About(QMainWindow):
     def __init__(self, parent=None):
         super(SS_About, self).__init__(parent)
-        self.setWindowIcon(QIcon(fallbackValues["icon"]))
         self.setWindowFlags(Qt.Dialog)
-        self.setWindowModality(Qt.WindowModality.ApplicationModal)
+        self.setWindowIcon(QIcon(fallbackValues["icon"]))
+        self.setWindowModality(Qt.WindowModality.ApplicationModal),
+        self.setMinimumSize(540, 300)
         self.setGeometry(
             QStyle.alignedRect(
                 Qt.LeftToRight,
@@ -74,7 +117,7 @@ class SS_Help(QMainWindow):
         self.setWindowFlags(Qt.Dialog)
         self.setWindowIcon(QIcon(fallbackValues["icon"]))
         self.setWindowModality(Qt.WindowModality.WindowModal)
-        self.setMinimumSize(480, 360)
+        self.setMinimumSize(540, 460)
 
         self.setGeometry(
             QStyle.alignedRect(
@@ -110,21 +153,21 @@ class SS_Help(QMainWindow):
             "</style></head><body>"
             "<h1>Help</h1>"
             "<table><tr><th>Shortcut</th><th>Function</th></tr>"
-            f"<tr><td>Ctrl + O</td><td>{translations[settings.value('appLanguage')]['open_title']}</td></tr>"
-            f"<tr><td>Ctrl + S</td><td>{translations[settings.value('appLanguage')]['save_title']}</td></tr>"
-            f"<tr><td>Ctrl + N</td><td>{translations[settings.value('appLanguage')]['new_title']}</td></tr>"
-            f"<tr><td>Ctrl + Shift + S</td><td>{translations[settings.value('appLanguage')]['save_as_title']}</td></tr>"
-            f"<tr><td>Ctrl + P</td><td>{translations[settings.value('appLanguage')]['print_title']}</td></tr>"
-            f"<tr><td>Ctrl + Q</td><td>{translations[settings.value('appLanguage')]['exit_title']}</td></tr>"
-            f"<tr><td>Ctrl + D</td><td>{translations[settings.value('appLanguage')]['delete_title']}</td></tr>"
-            f"<tr><td>Ctrl + A</td><td>{translations[settings.value('appLanguage')]['about_title']}</td></tr>"
-            f"<tr><td>Ctrl + Z</td><td>{translations[settings.value('appLanguage')]['undo_title']}</td></tr>"
-            f"<tr><td>Ctrl + Y</td><td>{translations[settings.value('appLanguage')]['redo_title']}</td></tr>"
-            f"<tr><td>Ctrl + L</td><td>{translations[settings.value('appLanguage')]['darklight_message']}</td></tr>"
-            f"<tr><td>Ctrl + Shift + R</td><td>{translations[settings.value('appLanguage')]['add_row_title']}</td></tr>"
-            f"<tr><td>Ctrl + Shift + C</td><td>{translations[settings.value('appLanguage')]['add_column_title']}</td></tr>"
-            f"<tr><td>Ctrl + Shift + T</td><td>{translations[settings.value('appLanguage')]['add_row_above_title']}</td></tr>"
-            f"<tr><td>Ctrl + Shift + L</td><td>{translations[settings.value('appLanguage')]['add_column_left_title']}</td></tr>"
+            f"<tr><td>Ctrl + O</td><td>{translations[lang]['open_title']}</td></tr>"
+            f"<tr><td>Ctrl + S</td><td>{translations[lang]['save_title']}</td></tr>"
+            f"<tr><td>Ctrl + N</td><td>{translations[lang]['new_title']}</td></tr>"
+            f"<tr><td>Ctrl + Shift + S</td><td>{translations[lang]['save_as_title']}</td></tr>"
+            f"<tr><td>Ctrl + P</td><td>{translations[lang]['print_title']}</td></tr>"
+            f"<tr><td>Ctrl + Q</td><td>{translations[lang]['exit_title']}</td></tr>"
+            f"<tr><td>Ctrl + D</td><td>{translations[lang]['delete_title']}</td></tr>"
+            f"<tr><td>Ctrl + A</td><td>{translations[lang]['about_title']}</td></tr>"
+            f"<tr><td>Ctrl + Z</td><td>{translations[lang]['undo_title']}</td></tr>"
+            f"<tr><td>Ctrl + Y</td><td>{translations[lang]['redo_title']}</td></tr>"
+            f"<tr><td>Ctrl + L</td><td>{translations[lang]['darklight_message']}</td></tr>"
+            f"<tr><td>Ctrl + Shift + R</td><td>{translations[lang]['add_row_title']}</td></tr>"
+            f"<tr><td>Ctrl + Shift + C</td><td>{translations[lang]['add_column_title']}</td></tr>"
+            f"<tr><td>Ctrl + Shift + T</td><td>{translations[lang]['add_row_above_title']}</td></tr>"
+            f"<tr><td>Ctrl + Shift + L</td><td>{translations[lang]['add_column_left_title']}</td></tr>"
             "</table></body></html>"
         )
 
@@ -214,6 +257,10 @@ class SS_Workbook(QMainWindow):
         self.setCentralWidget(self.SpreadsheetArea)
 
         self.SpreadsheetArea.setDisabled(True)
+        self.SpreadsheetArea.horizontalHeader().sectionClicked.connect(
+            self.changeColumnName
+        )
+        self.SpreadsheetArea.itemChanged.connect(self.onItemChanged)
         self.initActions()
         self.initToolbar()
         self.adaptiveResponse = settings.value("adaptiveResponse")
@@ -233,7 +280,7 @@ class SS_Workbook(QMainWindow):
             self.SpreadsheetArea.setColumnCount(100)
             self.SpreadsheetArea.setRowCount(50)
             self.SpreadsheetArea.clearSpans()
-            self.SpreadsheetArea.setItem(0, 0, QTableWidgetItem(""))
+            self.SpreadsheetArea.setItem(0, 0, None)
 
         self.SpreadsheetArea.setDisabled(False)
         self.updateTitle()
@@ -243,12 +290,19 @@ class SS_Workbook(QMainWindow):
             str((endtime - starttime).total_seconds()) + " sec", 2500
         )
 
+    def onItemChanged(self, item):
+        if item.row() == 0:
+            header_text = item.text()
+            self.SpreadsheetArea.setHorizontalHeaderItem(
+                item.column(), QTableWidgetItem(header_text)
+            )
+
     def closeEvent(self, event):
         if self.is_saved == False:
             reply = QMessageBox.question(
                 self,
                 f"{app.applicationDisplayName()}",
-                translations[settings.value("appLanguage")]["exit_message"],
+                translations[lang]["exit_message"],
                 QMessageBox.Yes | QMessageBox.No,
                 QMessageBox.No,
             )
@@ -288,11 +342,11 @@ class SS_Workbook(QMainWindow):
         self.toolbarTranslate()
 
     def updateTitle(self):
-        file = (
-            self.file_name or translations[settings.value("appLanguage")]["new_title"]
-        )
+        file = self.file_name or translations[lang]["new_title"]
 
-        textMode = " - Read Only" if file.endswith((".xlsx", ".xsrc")) else ""
+        textMode = (
+            translations[lang]["readonly"] if file.endswith((".xlsx", ".xsrc")) else ""
+        )
         asterisk = "*" if not self.is_saved else ""
 
         self.setWindowTitle(
@@ -307,6 +361,8 @@ class SS_Workbook(QMainWindow):
             self.SpreadsheetArea.currentColumn() + 1,
         )
 
+        lang = settings.value("appLanguage")
+
         statistics = (
             "<html><head><style>"
             "table { width: 100%; border-spacing: 0;}"
@@ -318,21 +374,31 @@ class SS_Workbook(QMainWindow):
             "#sr-text { background-color: #E2E3E1; color: #000000; font-weight: bold;}"
             "</style></head><body>"
             "<table><tr>"
-            f"<th>{translations[settings.value('appLanguage')]['statistics_title']}</th>"
+            f"<th>{translations[lang]['statistics_title']}</th>"
         )
-        statistics += f"<td>{translations[settings.value('appLanguage')]['statistics_message1']}</td><td>{row}</td><td>{translations[settings.value('appLanguage')]['statistics_message2']}</td><td>{column}</td>"
-        statistics += f"<td>{translations[settings.value('appLanguage')]['statistics_message2']}</td><td>{selected_cell[0]}:{selected_cell[1]}</td>"
-        if self.SpreadsheetArea.selectedRanges():
-            statistics += f"<td>{translations[settings.value('appLanguage')]['statistics_message3']}</td><td>"
-            for selected_range in self.SpreadsheetArea.selectedRanges():
-                statistics += f"{selected_range.topRow() + 1}:{selected_range.leftColumn() + 1} - {selected_range.bottomRow() + 1}:{selected_range.rightColumn() + 1}</td>"
+
+        statistics += (
+            f"<td>{translations[lang]['statistics_message1']}</td><td>{row}</td>"
+        )
+        statistics += (
+            f"<td>{translations[lang]['statistics_message2']}</td><td>{column}</td>"
+        )
+        statistics += (
+            f"<td>{translations[lang]['statistics_message3']}</td><td>{row*column}</td>"
+        )
+
+        if selected_cell:
+            statistics += f"<td>{translations[lang]['statistics_message3']}</td><td>"
+            statistics += f"{selected_cell[0]}:{selected_cell[1]}</td>"
         else:
-            statistics += f"<td>{translations[settings.value('appLanguage')]['statistics_message4']}</td><td>{selected_cell[0]}:{selected_cell[1]}</td>"
+            statistics += f"<td>{translations[lang]['statistics_message4']}</td><td>{selected_cell[0]}:{selected_cell[1]}</td>"
 
         statistics += f"</td><td id='sr-text'>{app.applicationDisplayName()}</td></tr></table></body></html>"
+
         self.statistics_label.setText(statistics)
         self.statusBar().addPermanentWidget(self.statistics_label)
         self.updateTitle()
+
         self.SpreadsheetArea.resizeColumnsToContents()
         self.SpreadsheetArea.resizeRowsToContents()
 
@@ -356,7 +422,7 @@ class SS_Workbook(QMainWindow):
         self.directory = settings.value("defaultDirectory", self.default_directory)
         self.file_name = settings.value("fileName")
         self.is_saved = settings.value("isSaved")
-        index = self.language_combobox.findData(settings.value("appLanguage"))
+        index = self.language_combobox.findData(lang)
         self.language_combobox.setCurrentIndex(index)
 
         if self.geometry is not None:
@@ -471,6 +537,7 @@ class SS_Workbook(QMainWindow):
             settings.setValue("appLanguage", "1252")
             settings.sync()
 
+        self.updateTitle()
         lang = settings.value("appLanguage")
 
         actions = [
@@ -558,8 +625,6 @@ class SS_Workbook(QMainWindow):
         return action
 
     def initActions(self):
-        lang = settings.value("appLanguage")
-
         action_definitions = [
             {
                 "name": "newAction",
@@ -689,13 +754,11 @@ class SS_Workbook(QMainWindow):
 
     def initToolbar(self):
 
-        self.file_toolbar = self.addToolBar(
-            translations[settings.value("appLanguage")]["file"]
-        )
+        self.file_toolbar = self.addToolBar(translations[lang]["file"])
         self.file_toolbar.setObjectName("File")
         self.toolbarCustomLabel(
             self.file_toolbar,
-            translations[settings.value("appLanguage")]["file"] + ": ",
+            translations[lang]["file"] + ": ",
         )
         self.file_toolbar.addActions(
             [
@@ -707,13 +770,11 @@ class SS_Workbook(QMainWindow):
             ]
         )
 
-        self.edit_toolbar = self.addToolBar(
-            translations[settings.value("appLanguage")]["edit"]
-        )
+        self.edit_toolbar = self.addToolBar(translations[lang]["edit"])
         self.edit_toolbar.setObjectName("Edit")
         self.toolbarCustomLabel(
             self.edit_toolbar,
-            translations[settings.value("appLanguage")]["edit"] + ": ",
+            translations[lang]["edit"] + ": ",
         )
         self.edit_toolbar.addActions(
             [
@@ -727,18 +788,16 @@ class SS_Workbook(QMainWindow):
             ]
         )
 
-        self.interface_toolbar = self.addToolBar(
-            translations[settings.value("appLanguage")]["interface"]
-        )
+        self.interface_toolbar = self.addToolBar(translations[lang]["interface"])
         self.interface_toolbar.setObjectName("Interface")
         self.toolbarCustomLabel(
             self.interface_toolbar,
-            translations[settings.value("appLanguage")]["interface"] + ": ",
+            translations[lang]["interface"] + ": ",
         )
 
         self.theme_action = self.createAction(
-            translations[settings.value("appLanguage")]["darklight"],
-            translations[settings.value("appLanguage")]["darklight_message"],
+            translations[lang]["darklight"],
+            translations[lang]["darklight_message"],
             self.themeAction,
             QKeySequence("Ctrl+Shift+T"),
             "",
@@ -748,13 +807,11 @@ class SS_Workbook(QMainWindow):
         self.interface_toolbar.addAction(self.theme_action)
 
         self.powersaveraction = QAction(
-            translations[settings.value("appLanguage")]["powersaver"],
+            translations[lang]["powersaver"],
             self,
             checkable=True,
         )
-        self.powersaveraction.setStatusTip(
-            translations[settings.value("appLanguage")]["powersaver_message"]
-        )
+        self.powersaveraction.setStatusTip(translations[lang]["powersaver_message"])
         self.powersaveraction.toggled.connect(self.hybridSaver)
 
         adaptiveResponse = settings.value(
@@ -772,26 +829,34 @@ class SS_Workbook(QMainWindow):
 
         self.addToolBarBreak()
 
-        self.formula_toolbar = self.addToolBar(
-            translations[settings.value("appLanguage")]["formula"]
-        )
+        self.formula_toolbar = self.addToolBar(translations[lang]["formula"])
         self.formula_toolbar.setObjectName("Formula")
         self.toolbarCustomLabel(
             self.formula_toolbar,
-            translations[settings.value("appLanguage")]["formula"] + ": ",
+            translations[lang]["formula"] + ": ",
         )
 
         self.formula_edit = QLineEdit()
-        self.formula_edit.setPlaceholderText(
-            translations[settings.value("appLanguage")]["formula"]
-        )
+        self.formula_edit.setPlaceholderText(translations[lang]["formula"])
         self.formula_edit.returnPressed.connect(self.computeFormula)
 
-        self.formula_button = QPushButton(
-            translations[settings.value("appLanguage")]["compute"]
-        )
+        self.formula_button = QPushButton(translations[lang]["compute"])
         self.formula_button.setStyleSheet(
-            "background-color: #A72461; color: #FFFFFF; font-weight: bold; padding: 10px; border-radius: 10px; border: 1px solid #000000; margin-left: 10px;"
+            """
+            QPushButton {
+                background-color: #A72461; 
+                color: #FFFFFF; 
+                font-weight: bold; 
+                padding: 10px; 
+                border-radius: 10px; 
+                border: 1px solid #000000; 
+                margin-left: 10px;
+            }
+            QPushButton:hover {
+                background-color: #C7357A;  /* Hover rengi */
+                border: 1px solid #FFDDDD;   /* Hover'da kenar rengi */
+            }
+            """
         )
         self.formula_button.setCursor(Qt.PointingHandCursor)
         self.formula_button.clicked.connect(self.computeFormula)
@@ -817,6 +882,63 @@ class SS_Workbook(QMainWindow):
         self.interface_toolbar.addAction(self.hide_dock_widget_action)
         self.interface_toolbar.addAction(self.helpAction)
         self.interface_toolbar.addAction(self.aboutAction)
+
+    def changeColumnName(self, column):
+        current_name = (
+            self.SpreadsheetArea.horizontalHeaderItem(column).text()
+            if self.SpreadsheetArea.horizontalHeaderItem(column)
+            else ""
+        )
+
+        if not current_name or current_name.lower() == "unnamed":
+            msg_text = f"Bu sütun isimsiz. Yeni bir isim vermek ister misiniz?"
+        else:
+            msg_text = f"'{current_name}' sütunu ile ne yapmak istersiniz?"
+
+        ccn_msg = QMessageBox(self)
+        ccn_msg.setText(msg_text)
+
+        rename_button = ccn_msg.addButton("Rename", QMessageBox.ActionRole)
+        select_button = ccn_msg.addButton("Select All", QMessageBox.ActionRole)
+        cancel_button = ccn_msg.addButton(QMessageBox.Cancel)
+        ccn_msg.exec()
+
+        if ccn_msg.clickedButton() == cancel_button:
+            return
+
+        first_cell_item = self.SpreadsheetArea.item(0, column)
+        if first_cell_item is None or first_cell_item.text() == "":
+            print(column)
+            self.SpreadsheetArea.setItem(0, column, QTableWidgetItem(f"{column + 1}"))
+
+        if ccn_msg.clickedButton() == rename_button:
+            new_name, ok = QInputDialog.getText(
+                self,
+                "Sütun Adını Değiştir",
+                "Yeni sütun adını girin:",
+                text=current_name,
+            )
+
+            if not ok or not new_name:
+                return
+
+            self.SpreadsheetArea.setHorizontalHeaderItem(
+                column, QTableWidgetItem(new_name)
+            )
+
+            if first_cell_item:
+                first_cell_item.setText(new_name)
+
+        elif ccn_msg.clickedButton() == select_button:
+            row_count = self.SpreadsheetArea.rowCount()
+
+            for row in range(row_count):
+                item = self.SpreadsheetArea.item(row, column)
+                if item is None:
+                    item = QTableWidgetItem()
+                    self.SpreadsheetArea.setItem(row, column, item)
+
+                item.setSelected(True)
 
     def createDockwidget(self):
         widget = QWidget()
@@ -850,7 +972,7 @@ class SS_Workbook(QMainWindow):
             reply = QMessageBox.question(
                 self,
                 app.applicationDisplayName(),
-                translations[settings.value("appLanguage")]["new_title"],
+                translations[lang]["new_title"],
                 QMessageBox.Yes | QMessageBox.No,
                 QMessageBox.No,
             )
@@ -860,19 +982,40 @@ class SS_Workbook(QMainWindow):
 
     def resetSpreadsheet(self):
         self.SpreadsheetArea.clearContents()
+
+        self.SpreadsheetArea.setRowCount(0)
+        self.SpreadsheetArea.setColumnCount(0)
+
+        self.SpreadsheetArea.setHorizontalHeaderLabels([])
+        self.SpreadsheetArea.setVerticalHeaderLabels([])
+
         self.SpreadsheetArea.setRowCount(50)
         self.SpreadsheetArea.setColumnCount(100)
+
+        default_headers = [
+            str(i + 1) for i in range(self.SpreadsheetArea.columnCount())
+        ]
+        self.SpreadsheetArea.setHorizontalHeaderLabels(default_headers)
+
+        QTimer.singleShot(0, self.resizeTable)
+
         self.directory = self.default_directory
         self.file_name = None
         self.is_saved = False
+
+        self.updateStatistics()
         self.updateTitle()
+
+    def resizeTable(self):
+        self.SpreadsheetArea.resizeColumnsToContents()
+        self.SpreadsheetArea.resizeRowsToContents()
 
     def openFile(self):
         if not self.is_saved:
             reply = QMessageBox.question(
                 self,
                 app.applicationDisplayName(),
-                translations[settings.value("appLanguage")]["open"],
+                translations[lang]["open"],
                 QMessageBox.Yes | QMessageBox.No,
                 QMessageBox.No,
             )
@@ -885,13 +1028,14 @@ class SS_Workbook(QMainWindow):
         options = QFileDialog.Options()
         selected_file, _ = QFileDialog.getOpenFileName(
             self,
-            f"{translations[settings.value('appLanguage')]['open_title']} — {app.applicationDisplayName()}",
+            f"{translations[lang]['open_title']} — {app.applicationDisplayName()}",
             self.directory,
             fallbackValues["readFilter"],
             options=options,
         )
 
         if selected_file:
+            self.resetSpreadsheet()
             self.file_name = selected_file
 
             if self.file_name.endswith(".xlsx"):
@@ -909,13 +1053,24 @@ class SS_Workbook(QMainWindow):
                     self.loadSpreadsheet(self.file_name)
             self.directory = os.path.dirname(self.file_name)
             self.is_saved = True
+            self.updateStatistics()
             self.updateTitle()
 
     def loadSpreadsheetFromExcel(self, file_name):
         try:
             read_file = pd.read_excel(file_name)
+
+            new_headers = []
+            for i, col in enumerate(read_file.columns):
+                if col.startswith("Unnamed") or pd.isnull(col):
+                    new_headers.append(str(i + 1))
+                else:
+                    new_headers.append(col)
+
+            read_file.columns = new_headers
             read_file.to_csv(f"{file_name}.ssfs", index=None, header=True)
             self.loadSpreadsheet(f"{file_name}.ssfs")
+            os.remove(f"{file_name}.ssfs")
         except Exception as e:
             QMessageBox.warning(self, None, f"Conversion failed: {e}")
 
@@ -924,34 +1079,38 @@ class SS_Workbook(QMainWindow):
             self.loadSpreadsheet(file_name)
 
     def loadSpreadsheet(self, file_path):
-        with open(file_path, "r") as file:
+        with open(file_path, "r", encoding="utf-8") as file:
             reader = csv.reader(file)
             data = list(reader)
-            self.SpreadsheetArea.setRowCount(len(data))
-            self.SpreadsheetArea.setColumnCount(len(data[0]) if data else 0)
 
-            for row in range(len(data)):
-                for column in range(len(data[row])):
-                    item = QTableWidgetItem(data[row][column])
-                    self.SpreadsheetArea.setItem(row, column, item)
+            if data:
+                column_headers = data[0]
+                self.SpreadsheetArea.setHorizontalHeaderLabels(column_headers)
+
+                self.SpreadsheetArea.setRowCount(len(data))
+                self.SpreadsheetArea.setColumnCount(len(column_headers))
+
+                for row in range(len(data)):
+                    for column in range(len(data[row])):
+                        item = QTableWidgetItem(data[row][column])
+                        self.SpreadsheetArea.setItem(row, column, item)
 
         self.SpreadsheetArea.resizeColumnsToContents()
         self.SpreadsheetArea.resizeRowsToContents()
 
     def saveFile(self):
-        if self.is_saved == False:
-            self.saveFileProcess()
-        elif self.file_name == None:
+        if self.file_name is None:
             self.saveFileAs()
-        else:
+        elif not self.is_saved:
             self.saveFileProcess()
+        else:
+            self.status_bar.showMessage("No changes to save.", 2000)
 
     def saveFileAs(self):
         options = QFileDialog.Options()
         selected_file, _ = QFileDialog.getSaveFileName(
             self,
-            translations[settings.value("appLanguage")]["save_as_title"]
-            + f" — {app.applicationDisplayName()}",
+            f"{translations[lang]['save_as_title']} — {app.applicationDisplayName()}",
             self.directory,
             fallbackValues["writeFilter"],
             options=options,
@@ -960,39 +1119,69 @@ class SS_Workbook(QMainWindow):
             self.file_name = selected_file
             self.directory = os.path.dirname(self.file_name)
             self.saveFileProcess()
-            return True
-        return False
 
     def saveFileProcess(self):
         if not self.file_name:
-            self.saveFileAs()
-            self.status_bar.showMessage("Saved.", 2000)
+            QMessageBox.warning(self, "Warning", "No file name specified.")
+            return
 
-        else:
-            with open(self.file_name, "w", newline="") as file:
-                writer = csv.writer(file)
-                for rowid in range(self.SpreadsheetArea.rowCount()):
-                    row = [
-                        (
-                            self.SpreadsheetArea.item(rowid, colid).text()
-                            if self.SpreadsheetArea.item(rowid, colid) is not None
-                            else ""
-                        )
-                        for colid in range(self.SpreadsheetArea.columnCount())
-                    ]
-                    writer.writerow(row)
-                self.status_bar.showMessage("Saved.", 2000)
+        file_extension = os.path.splitext(self.file_name)[1]
+        save_method = {
+            ".xlsx": self.saveAsExcel,
+            ".ssfs": self.saveAsSSFS,
+            ".csv": self.saveAsCSV,
+        }.get(file_extension, self.saveAsCSV)
 
-        self.is_saved = True
-        self.updateTitle()
+        try:
+            save_method()
+            self.is_saved = True
+            self.updateTitle()
+        except Exception as e:
+            QMessageBox.warning(self, "Error", f"Failed to save file: {e}")
+
+    def cellData(self):
+        return [
+            [
+                (
+                    self.SpreadsheetArea.item(rowid, colid).text()
+                    if self.SpreadsheetArea.item(rowid, colid)
+                    else ""
+                )
+                for colid in range(self.SpreadsheetArea.columnCount())
+            ]
+            for rowid in range(self.SpreadsheetArea.rowCount())
+        ]
+
+    def saveAsExcel(self):
+        try:
+            pd.DataFrame(self.cellData()).to_excel(
+                self.file_name, index=False, header=False
+            )
+            self.status_bar.showMessage("Saved as Excel file.", 2000)
+        except Exception as e:
+            QMessageBox.warning(self, "Error", f"Failed to save as Excel: {e}")
+
+    def saveAsSSFS(self):
+        try:
+            with open(self.file_name, "w", newline="", encoding="utf-8") as file:
+                csv.writer(file).writerows(self.cellData())
+            self.status_bar.showMessage("Saved as SSFS file.", 2000)
+        except Exception as e:
+            QMessageBox.warning(self, "Error", f"Failed to save as SSFS: {e}")
+
+    def saveAsCSV(self):
+        try:
+            with open(self.file_name, "w", newline="", encoding="utf-8") as file:
+                csv.writer(file).writerows(self.cellData())
+            self.status_bar.showMessage("Saved as CSV file.", 2000)
+        except Exception as e:
+            QMessageBox.warning(self, "Error", f"Failed to save as CSV: {e}")
 
     def printSpreadsheet(self):
         selected_ranges = self.SpreadsheetArea.selectedRanges()
 
         if not selected_ranges:
-            QMessageBox.warning(
-                self, None, translations[settings.value("appLanguage")]["print_warning"]
-            )
+            QMessageBox.warning(self, None, translations[lang]["print_warning"])
             return
 
         printer = self.setupPrinter()
@@ -1039,8 +1228,8 @@ class SS_Workbook(QMainWindow):
         painter.drawText(QRect(x, y, cell_width, cell_height), Qt.AlignCenter, text)
 
     def viewAbout(self):
-        self.viewAbout = SS_About()
-        self.viewAbout.show()
+        viewAbout = SS_About(self)
+        viewAbout.show()
 
     def viewHelp(self):
         help_window = SS_Help(self)
@@ -1116,6 +1305,13 @@ class SS_Workbook(QMainWindow):
                 result = "graph"
                 pltgraph = plt.figure()
                 pltgraph.suptitle(graphformulas[formula])
+                x_label = (
+                    "Index"
+                    if formula in ["similargraph", "pointgraph", "bargraph"]
+                    else "Categories"
+                )
+                y_label = "Value"
+
                 if formula == "similargraph":
                     plt.plot(operands)
                 elif formula == "pointgraph":
@@ -1124,10 +1320,13 @@ class SS_Workbook(QMainWindow):
                     plt.bar(range(len(operands)), operands)
                 elif formula == "piegraph":
                     plt.pie(operands)
+                    y_label = "Percentage"
                 elif formula == "histogram":
                     plt.hist(operands)
-                plt.xlabel("X")
-                plt.ylabel("Y")
+                    y_label = "Frequency"
+
+                plt.xlabel(x_label)
+                plt.ylabel(y_label)
                 plt.grid(True)
                 datetime_string = QDateTime.currentDateTimeUtc().toString(
                     "yyyy-MM-dd HH:mm:ss"
@@ -1148,6 +1347,7 @@ class SS_Workbook(QMainWindow):
 
                 graph_container = QWidget()
                 graph_layout = QVBoxLayout(graph_container)
+                graph_layout.setContentsMargins(10, 10, 10, 10)
 
                 graph_label = QLabel()
                 graph_label.setPixmap(QPixmap(graph_path))
@@ -1157,23 +1357,59 @@ class SS_Workbook(QMainWindow):
                 date_label = QLabel(
                     f"{datetime_string} ({str((end_elasped - start_elapsed).total_seconds())} sec)"
                 )
+                date_label.setAlignment(Qt.AlignCenter)
                 graph_layout.addWidget(date_label)
 
                 button_layout = QGridLayout()
 
                 save_button = QPushButton("Save")
                 save_button.clicked.connect(lambda: self.saveGraph(graph_path))
+                save_button.setStyleSheet(
+                    """
+                    QPushButton {
+                        background-color: #6200EE; 
+                        color: white; 
+                        font-weight: bold; 
+                        padding: 10px; 
+                        border-radius: 5px; 
+                        border: none;
+                    }
+                    QPushButton:hover {
+                        background-color: #3700B3; /* Hover rengi */
+                    }
+                """
+                )
+                save_button.setCursor(QCursor(Qt.PointingHandCursor))
+
                 button_layout.addWidget(save_button, 0, 0)
 
                 delete_button = QPushButton("Delete")
                 delete_button.clicked.connect(
                     lambda: self.deleteGraph(graph_container, graph_path)
                 )
+                delete_button.setStyleSheet(
+                    """
+                    QPushButton {
+                        background-color: #D50000; 
+                        color: white; 
+                        font-weight: bold; 
+                        padding: 10px; 
+                        border-radius: 5px; 
+                        border: none;
+                    }
+                    QPushButton:hover {
+                        background-color: #9B0000; /* Hover rengi */
+                    }
+                """
+                )
+                delete_button.setCursor(QCursor(Qt.PointingHandCursor))
+
                 button_layout.addWidget(delete_button, 0, 1)
 
                 graph_layout.addLayout(button_layout)
 
                 self.GraphLog_QVBox.insertWidget(0, graph_container)
+
                 graph_count = self.GraphLog_QVBox.count()
                 self.dock_widget.setWindowTitle(f"Graph Log ({graph_count})")
                 self.dock_widget.setVisible(True)
@@ -1221,7 +1457,14 @@ class SS_Workbook(QMainWindow):
         self.SpreadsheetArea.insertRow(self.SpreadsheetArea.rowCount())
 
     def rowAddAbove(self):
-        self.SpreadsheetArea.insertRow(self.SpreadsheetArea.currentRow())
+        current_row = self.SpreadsheetArea.currentRow()
+
+        if current_row == 0:
+            QMessageBox.warning(
+                self, "Warning", "Cannot add a row above the first row."
+            )
+        else:
+            self.SpreadsheetArea.insertRow(current_row)
 
     def columnAdd(self):
         self.SpreadsheetArea.insertColumn(self.SpreadsheetArea.columnCount())
@@ -1241,6 +1484,6 @@ if __name__ == "__main__":
     app.setApplicationName("SolidSheets")
     app.setApplicationDisplayName("SolidSheets 2024.11")
     app.setApplicationVersion("1.5.2024.11-1")
-    wb = SS_Workbook()
+    wb = SS_ControlInfo()
     wb.show()
     sys.exit(app.exec())
