@@ -753,7 +753,6 @@ class SS_Workbook(QMainWindow):
             )
 
     def initToolbar(self):
-
         self.file_toolbar = self.addToolBar(translations[lang]["file"])
         self.file_toolbar.setObjectName("File")
         self.toolbarCustomLabel(
@@ -894,7 +893,6 @@ class SS_Workbook(QMainWindow):
             msg_text = "This column is unnamed. Would you like to give it a new name?"
         else:
             msg_text = f"What would you like to do with the '{current_name}' column?"
-
 
         ccn_msg = QMessageBox(self)
         ccn_msg.setText(msg_text)
