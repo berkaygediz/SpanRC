@@ -1,6 +1,6 @@
 # SolidSheets - A Lightweight Spreadsheet Editor
 
-![Screenshot](images/solidsheets_banner_1.png)
+![Screenshot](images/solidsheets_banner_2.png)
 
 ![GitHub release (latest by date)](https://img.shields.io/github/v/release/berkaygediz/solidsheets)
 ![GitHub repo size](https://img.shields.io/github/repo-size/berkaygediz/solidsheets)
@@ -48,7 +48,7 @@ SolidSheets is a lightweight spreadsheet editor written in Python, utilizing the
 3. Creating a executable file (Unsigned):
 
    ```bash
-   pyinstaller --noconfirm --onefile --windowed --icon "solidsheets_icon.ico" --name "SolidSheets" --clean --optimize "2" --add-data "solidsheets_icon.png;."  "SolidSheets.py"
+   pyinstaller --noconfirm --onefile --windowed --icon "solidsheets_icon.ico" --name "SolidSheets" --clean --optimize "2" "SolidSheets.py"
    ```
 
 ## Usage
