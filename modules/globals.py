@@ -606,7 +606,7 @@ translations = {
         "add_column_left_title": "왼쪽에 열 추가",
         "powersaver": "전원 절약",
         "powersaver_message": "혼합(초기/표준) 전원 절약.",
-        "readonly": "읽기 전용",
+        "readonly": " — 읽기 전용",
     },
     "1041": {
         "new": "新規作成",
