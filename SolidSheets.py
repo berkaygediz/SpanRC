@@ -83,6 +83,9 @@ class SS_About(QMainWindow):
         self.setWindowIcon(QIcon(fallbackValues["icon"]))
         self.setWindowModality(Qt.WindowModality.ApplicationModal),
         self.setMinimumSize(540, 300)
+
+        lang = settings.value("appLanguage")
+
         self.setGeometry(
             QStyle.alignedRect(
                 Qt.LeftToRight,
@@ -118,6 +121,8 @@ class SS_Help(QMainWindow):
         self.setWindowIcon(QIcon(fallbackValues["icon"]))
         self.setWindowModality(Qt.WindowModality.WindowModal)
         self.setMinimumSize(540, 460)
+
+        lang = settings.value("appLanguage")
 
         self.setGeometry(
             QStyle.alignedRect(
@@ -337,11 +342,12 @@ class SS_Workbook(QMainWindow):
     def changeLanguage(self):
         settings.setValue("appLanguage", self.language_combobox.currentData())
         settings.sync()
-        self.updateTitle()
-        self.updateStatistics()
         self.toolbarTranslate()
+        self.updateStatistics()
+        self.updateTitle()
 
     def updateTitle(self):
+        lang = settings.value("appLanguage")
         file = self.file_name or translations[lang]["new_title"]
 
         textMode = (
@@ -547,7 +553,6 @@ class SS_Workbook(QMainWindow):
             ("saveasAction", "save_as"),
             ("printAction", "print"),
             ("deleteAction", "delete"),
-            ("aboutAction", "about"),
             ("undoAction", "undo"),
             ("redoAction", "redo"),
             ("addrowAction", "add_row"),
@@ -556,6 +561,8 @@ class SS_Workbook(QMainWindow):
             ("addcolumnleftAction", "add_column_left"),
             ("darklightAction", "darklight"),
             ("powersaveraction", "powersaver"),
+            ("helpAction", "help"),
+            ("aboutAction", "about"),
         ]
 
         for action_name, translation_key in actions:
@@ -566,6 +573,26 @@ class SS_Workbook(QMainWindow):
                 if f"{translation_key}_title" in translations[lang]
                 else translations[lang][translation_key]
             )
+
+        self.translateToolbarLabel(self.file_toolbar, translations[lang]["file"])
+        self.translateToolbarLabel(self.edit_toolbar, translations[lang]["edit"])
+        self.translateToolbarLabel(
+            self.interface_toolbar, translations[lang]["interface"]
+        )
+        self.translateToolbarLabel(self.formula_toolbar, translations[lang]["formula"])
+
+        self.formula_button.setText(translations[lang]["compute"])
+
+    def translateToolbarLabel(self, toolbar, label_key):
+        self.updateToolbarLabel(
+            toolbar, translations[lang].get(label_key, label_key) + ": "
+        )
+
+    def updateToolbarLabel(self, toolbar, new_label):
+        for widget in toolbar.children():
+            if isinstance(widget, QLabel):
+                widget.setText(f"<b>{new_label}</b>")
+                return
 
     def initDock(self):
         self.statistics_label = QLabel()
@@ -852,8 +879,8 @@ class SS_Workbook(QMainWindow):
                 margin-left: 10px;
             }
             QPushButton:hover {
-                background-color: #C7357A;  /* Hover rengi */
-                border: 1px solid #FFDDDD;   /* Hover'da kenar rengi */
+                background-color: #C7357A; 
+                border: 1px solid #FFDDDD; 
             }
             """
         )
@@ -902,31 +929,57 @@ class SS_Workbook(QMainWindow):
         cancel_button = ccn_msg.addButton(QMessageBox.Cancel)
         ccn_msg.exec()
 
-        if ccn_msg.clickedButton() == cancel_button:
-            return
-
         first_cell_item = self.SpreadsheetArea.item(0, column)
         if first_cell_item is None or first_cell_item.text() == "":
-            print(column)
             self.SpreadsheetArea.setItem(0, column, QTableWidgetItem(f"{column + 1}"))
+            QTimer.singleShot(0, self.resizeTable)
+
+        if ccn_msg.clickedButton() == cancel_button:
+            return
 
         if ccn_msg.clickedButton() == rename_button:
             new_name, ok = QInputDialog.getText(
                 self,
-                "Sütun Adını Değiştir",
-                "Yeni sütun adını girin:",
+                "Change Column Name",
+                "New column name:",
                 text=current_name,
             )
 
-            if not ok or not new_name:
+            if not ok or not new_name or len(new_name.strip()) == 0:
+                QMessageBox.warning(
+                    self, "Invalid Input", "Please enter a valid column name."
+                )
+                return
+
+            max_length = 100
+            if len(new_name) > max_length:
+                QMessageBox.warning(
+                    self,
+                    "Invalid Input",
+                    f"Column name cannot be longer than {max_length} characters.",
+                )
+                return
+
+            if not new_name.isalnum() and " " not in new_name:
+                QMessageBox.warning(
+                    self,
+                    "Invalid Input",
+                    "Column name can only contain letters, numbers, and spaces.",
+                )
                 return
 
             self.SpreadsheetArea.setHorizontalHeaderItem(
                 column, QTableWidgetItem(new_name)
             )
 
-            if first_cell_item:
+            first_cell_item = self.SpreadsheetArea.item(0, column)
+            if first_cell_item is None or first_cell_item.text() == "":
+                self.SpreadsheetArea.setItem(0, column, QTableWidgetItem(f"{new_name}"))
+
+            elif first_cell_item:
                 first_cell_item.setText(new_name)
+
+            QTimer.singleShot(0, self.resizeTable)
 
         elif ccn_msg.clickedButton() == select_button:
             row_count = self.SpreadsheetArea.rowCount()
@@ -1084,6 +1137,11 @@ class SS_Workbook(QMainWindow):
 
             if data:
                 column_headers = data[0]
+
+                for i in range(len(column_headers)):
+                    if not column_headers[i].strip():
+                        column_headers[i] = f"{i + 1}"
+
                 self.SpreadsheetArea.setHorizontalHeaderLabels(column_headers)
 
                 self.SpreadsheetArea.setRowCount(len(data))
@@ -1249,11 +1307,13 @@ class SS_Workbook(QMainWindow):
                 ):
                     item = self.SpreadsheetArea.item(row, col)
                     if item:
-                        try:
-                            value = float(item.text().strip())
-                            values.append(value)
-                        except ValueError:
-                            continue
+                        text = item.text().strip()
+                        if text.replace(".", "", 1).isdigit() and text.count(".") < 2:
+                            try:
+                                value = float(text)
+                                values.append(value)
+                            except ValueError:
+                                continue
 
         return values
 
@@ -1279,15 +1339,21 @@ class SS_Workbook(QMainWindow):
     def processFormula(self):
         try:
             formulavalue = self.formula_edit.text().strip()
+            if not formulavalue:
+                QMessageBox.warning(self, "Input Error", "ERROR: No formula provided.")
+                return
+
             formula = formulavalue.split()[0]
 
             if formula not in formulas:
-                raise ValueError(f"ERROR: {formula}")
+                QMessageBox.warning(self, "Input Error", f"ERROR: {formula}")
+                return
 
             operands = self.selectedCells()
 
             if not operands:
-                raise ValueError(f"ERROR: {operands}")
+                QMessageBox.warning(self, "Input Error", "ERROR: No operands selected.")
+                return
 
             if formula == "sum":
                 result = sum(operands)
@@ -1301,15 +1367,9 @@ class SS_Workbook(QMainWindow):
                 result = min(operands)
             elif formula in graphformulas:
                 start_elapsed = datetime.datetime.now()
-                result = "graph"
                 pltgraph = plt.figure()
                 pltgraph.suptitle(graphformulas[formula])
-                x_label = (
-                    "Index"
-                    if formula in ["similargraph", "pointgraph", "bargraph"]
-                    else "Categories"
-                )
-                y_label = "Value"
+                x_label, y_label = self.getGraphLabels(formula, operands)
 
                 if formula == "similargraph":
                     plt.plot(operands)
@@ -1374,7 +1434,7 @@ class SS_Workbook(QMainWindow):
                         border: none;
                     }
                     QPushButton:hover {
-                        background-color: #3700B3; /* Hover rengi */
+                        background-color: #3700B3;
                     }
                 """
                 )
@@ -1397,7 +1457,7 @@ class SS_Workbook(QMainWindow):
                         border: none;
                     }
                     QPushButton:hover {
-                        background-color: #9B0000; /* Hover rengi */
+                        background-color: #9B0000;
                     }
                 """
                 )
@@ -1420,6 +1480,52 @@ class SS_Workbook(QMainWindow):
             QMessageBox.critical(self, "Formula", str(valueerror))
         except Exception as exception:
             QMessageBox.critical(self, "Formula", str(exception))
+
+    def getGraphLabels(self, formula, operands):
+        column_headers = self.getColumnHeadersForSelectedCells()
+
+        x_label = "Index"
+        y_label = "Value"
+
+        if formula in ["similargraph", "pointgraph", "bargraph"]:
+            if len(column_headers) >= 2:
+                x_label = f"X"
+                y_label = f"Y"
+            else:
+                x_label = "X"
+                y_label = "Y"
+
+        elif formula == "piegraph":
+            if column_headers:
+                x_label = f"X"
+                y_label = "Percentage"
+            else:
+                x_label = "Categories"
+                y_label = "Percentage"
+
+        elif formula == "histogram":
+            if column_headers:
+                x_label = f"X"
+                y_label = "Frequency"
+            else:
+                x_label = "Categories"
+                y_label = "Frequency"
+
+        if operands:
+            if len(operands) > 1:
+                x_label = f"X"
+                y_label = f"Y"
+
+        return x_label, y_label
+
+    def getColumnHeadersForSelectedCells(self):
+        column_headers = []
+
+        for col in range(self.SpreadsheetArea.columnCount()):
+            header = self.SpreadsheetArea.horizontalHeaderItem(col)
+            if header:
+                column_headers.append(header.text())
+        return column_headers
 
     def saveGraph(self, filepath):
         options = QFileDialog.Options()
