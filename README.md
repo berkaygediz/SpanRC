@@ -21,6 +21,7 @@ SolidSheets is a lightweight spreadsheet editor written in Python, utilizing the
 - [x] **Multilingual**: Available in English, Turkish, German, Spanish, Azerbaijani, Uzbek, Chinese, Korean, Japanese, Arabic, Russian, French, Greek & Hebrew.
 - [x] **Cross-Platform**: Compatible with Windows, macOS, and Linux.
 - [x] **Efficiency**: Designed for power-saving and utilizes hardware acceleration.
+- [x] **Machine Learning**: Integrated machine learning algorithms for linear regression.
 
 ## Prerequisites
 
@@ -30,6 +31,7 @@ SolidSheets is a lightweight spreadsheet editor written in Python, utilizing the
 - psutil
 - pandas
 - openpyxl
+- statsmodels
 
 ## Installation
 

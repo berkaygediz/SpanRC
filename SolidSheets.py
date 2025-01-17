@@ -9,6 +9,7 @@ from datetime import timezone
 import matplotlib.pyplot as plt
 import pandas as pd
 import psutil
+import statsmodels.api as sm
 from PySide6.QtCore import *
 from PySide6.QtGui import *
 from PySide6.QtOpenGL import *
@@ -30,7 +31,7 @@ except ImportError:
 
 try:
     settings = QSettings("berkaygediz", "SolidSheets")
-    lang = settings.value("appLanguage")
+    globalLang = settings.value("appLanguage")
 except:
     pass
 
@@ -307,7 +308,7 @@ class SS_Workbook(QMainWindow):
             reply = QMessageBox.question(
                 self,
                 f"{app.applicationDisplayName()}",
-                translations[lang]["exit_message"],
+                translations[globalLang]["exit_message"],
                 QMessageBox.Yes | QMessageBox.No,
                 QMessageBox.No,
             )
@@ -394,7 +395,7 @@ class SS_Workbook(QMainWindow):
         )
 
         if selected_cell:
-            statistics += f"<td>{translations[lang]['statistics_message3']}</td><td>"
+            statistics += f"<td>{translations[lang]['statistics_message4']}</td><td>"
             statistics += f"{selected_cell[0]}:{selected_cell[1]}</td>"
         else:
             statistics += f"<td>{translations[lang]['statistics_message4']}</td><td>{selected_cell[0]}:{selected_cell[1]}</td>"
@@ -428,7 +429,7 @@ class SS_Workbook(QMainWindow):
         self.directory = settings.value("defaultDirectory", self.default_directory)
         self.file_name = settings.value("fileName")
         self.is_saved = settings.value("isSaved")
-        index = self.language_combobox.findData(lang)
+        index = self.language_combobox.findData(globalLang)
         self.language_combobox.setCurrentIndex(index)
 
         if self.geometry is not None:
@@ -538,13 +539,13 @@ class SS_Workbook(QMainWindow):
                     toolbar.setPalette(action_color)
 
     def toolbarTranslate(self):
-        system_language = locale.getlocale()[1]
-        if system_language not in languages.keys():
+        langValue = settings.value("appLanguage")
+
+        if langValue not in languages.keys():
             settings.setValue("appLanguage", "1252")
             settings.sync()
 
         self.updateTitle()
-        lang = settings.value("appLanguage")
 
         actions = [
             ("newAction", "new"),
@@ -567,25 +568,31 @@ class SS_Workbook(QMainWindow):
 
         for action_name, translation_key in actions:
             action = getattr(self, action_name)
-            action.setText(translations[lang][translation_key])
+            action.setText(translations[langValue][translation_key])
             action.setStatusTip(
-                translations[lang][f"{translation_key}_title"]
-                if f"{translation_key}_title" in translations[lang]
-                else translations[lang][translation_key]
+                translations[langValue][f"{translation_key}_title"]
+                if f"{translation_key}_title" in translations[langValue]
+                else translations[langValue][translation_key]
             )
 
-        self.translateToolbarLabel(self.file_toolbar, translations[lang]["file"])
-        self.translateToolbarLabel(self.edit_toolbar, translations[lang]["edit"])
         self.translateToolbarLabel(
-            self.interface_toolbar, translations[lang]["interface"]
+            self.file_toolbar, translations[langValue]["file"], langValue
         )
-        self.translateToolbarLabel(self.formula_toolbar, translations[lang]["formula"])
+        self.translateToolbarLabel(
+            self.edit_toolbar, translations[langValue]["edit"], langValue
+        )
+        self.translateToolbarLabel(
+            self.interface_toolbar, translations[langValue]["interface"], langValue
+        )
+        self.translateToolbarLabel(
+            self.formula_toolbar, translations[langValue]["formula"], langValue
+        )
 
-        self.formula_button.setText(translations[lang]["compute"])
+        self.formula_button.setText(translations[langValue]["compute"])
 
-    def translateToolbarLabel(self, toolbar, label_key):
+    def translateToolbarLabel(self, toolbar, label_key, langValue):
         self.updateToolbarLabel(
-            toolbar, translations[lang].get(label_key, label_key) + ": "
+            toolbar, translations[langValue].get(label_key, label_key) + ": "
         )
 
     def updateToolbarLabel(self, toolbar, new_label):
@@ -655,71 +662,71 @@ class SS_Workbook(QMainWindow):
         action_definitions = [
             {
                 "name": "newAction",
-                "text": translations[lang]["new"],
-                "status_tip": translations[lang]["new_title"],
+                "text": translations[globalLang]["new"],
+                "status_tip": translations[globalLang]["new_title"],
                 "function": self.new,
                 "shortcut": QKeySequence.New,
             },
             {
                 "name": "openAction",
-                "text": translations[lang]["open"],
-                "status_tip": translations[lang]["open_title"],
+                "text": translations[globalLang]["open"],
+                "status_tip": translations[globalLang]["open_title"],
                 "function": self.openFile,
                 "shortcut": QKeySequence.Open,
             },
             {
                 "name": "saveAction",
-                "text": translations[lang]["save"],
-                "status_tip": translations[lang]["save_title"],
+                "text": translations[globalLang]["save"],
+                "status_tip": translations[globalLang]["save_title"],
                 "function": self.saveFile,
                 "shortcut": QKeySequence.Save,
             },
             {
                 "name": "saveasAction",
-                "text": translations[lang]["save_as"],
-                "status_tip": translations[lang]["save_as_title"],
+                "text": translations[globalLang]["save_as"],
+                "status_tip": translations[globalLang]["save_as_title"],
                 "function": self.saveFileAs,
                 "shortcut": QKeySequence.SaveAs,
             },
             {
                 "name": "printAction",
-                "text": translations[lang]["print"],
-                "status_tip": translations[lang]["print_title"],
+                "text": translations[globalLang]["print"],
+                "status_tip": translations[globalLang]["print_title"],
                 "function": self.printSpreadsheet,
                 "shortcut": QKeySequence.Print,
             },
             {
                 "name": "deleteAction",
-                "text": translations[lang]["delete"],
-                "status_tip": translations[lang]["delete_title"],
+                "text": translations[globalLang]["delete"],
+                "status_tip": translations[globalLang]["delete_title"],
                 "function": self.cellDelete,
                 "shortcut": QKeySequence.Delete,
             },
             {
                 "name": "addrowAction",
-                "text": translations[lang]["add_row"],
-                "status_tip": translations[lang]["add_row_title"],
+                "text": translations[globalLang]["add_row"],
+                "status_tip": translations[globalLang]["add_row_title"],
                 "function": self.rowAdd,
                 "shortcut": QKeySequence("Ctrl+Shift+R"),
             },
             {
                 "name": "addcolumnAction",
-                "text": translations[lang]["add_column"],
-                "status_tip": translations[lang]["add_column_title"],
+                "text": translations[globalLang]["add_column"],
+                "status_tip": translations[globalLang]["add_column_title"],
                 "function": self.columnAdd,
                 "shortcut": QKeySequence("Ctrl+Shift+C"),
             },
             {
                 "name": "addrowaboveAction",
-                "text": translations[lang]["add_row_above"],
-                "status_tip": translations[lang]["add_row_above_title"],
+                "text": translations[globalLang]["add_row_above"],
+                "status_tip": translations[globalLang]["add_row_above_title"],
                 "function": self.rowAddAbove,
                 "shortcut": QKeySequence("Ctrl+Shift+T"),
             },
             {
                 "name": "addcolumnleftAction",
-                "text": translations[lang]["add_column_left"],
-                "status_tip": translations[lang]["add_column_left_title"],
+                "text": translations[globalLang]["add_column_left"],
+                "status_tip": translations[globalLang]["add_column_left_title"],
                 "function": self.columnAddLeft,
                 "shortcut": QKeySequence("Ctrl+Shift+L"),
             },
@@ -732,36 +739,36 @@ class SS_Workbook(QMainWindow):
             },
             {
                 "name": "helpAction",
-                "text": translations[lang]["help"],
-                "status_tip": translations[lang]["help"],
+                "text": translations[globalLang]["help"],
+                "status_tip": translations[globalLang]["help"],
                 "function": self.viewHelp,
                 "shortcut": QKeySequence("Ctrl+H"),
             },
             {
                 "name": "aboutAction",
-                "text": translations[lang]["about"],
-                "status_tip": translations[lang]["about_title"],
+                "text": translations[globalLang]["about"],
+                "status_tip": translations[globalLang]["about_title"],
                 "function": self.viewAbout,
                 "shortcut": QKeySequence.HelpContents,
             },
             {
                 "name": "undoAction",
-                "text": translations[lang]["undo"],
-                "status_tip": translations[lang]["undo_title"],
+                "text": translations[globalLang]["undo"],
+                "status_tip": translations[globalLang]["undo_title"],
                 "function": self.undo_stack.undo,
                 "shortcut": QKeySequence.Undo,
             },
             {
                 "name": "redoAction",
-                "text": translations[lang]["redo"],
-                "status_tip": translations[lang]["redo_title"],
+                "text": translations[globalLang]["redo"],
+                "status_tip": translations[globalLang]["redo_title"],
                 "function": self.undo_stack.redo,
                 "shortcut": QKeySequence.Redo,
             },
             {
                 "name": "darklightAction",
-                "text": translations[lang]["darklight"],
-                "status_tip": translations[lang]["darklight_message"],
+                "text": translations[globalLang]["darklight"],
+                "status_tip": translations[globalLang]["darklight_message"],
                 "function": self.themeAction,
                 "shortcut": QKeySequence("Ctrl+D"),
             },
@@ -780,11 +787,11 @@ class SS_Workbook(QMainWindow):
             )
 
     def initToolbar(self):
-        self.file_toolbar = self.addToolBar(translations[lang]["file"])
+        self.file_toolbar = self.addToolBar(translations[globalLang]["file"])
         self.file_toolbar.setObjectName("File")
         self.toolbarCustomLabel(
             self.file_toolbar,
-            translations[lang]["file"] + ": ",
+            translations[globalLang]["file"] + ": ",
         )
         self.file_toolbar.addActions(
             [
@@ -796,11 +803,11 @@ class SS_Workbook(QMainWindow):
             ]
         )
 
-        self.edit_toolbar = self.addToolBar(translations[lang]["edit"])
+        self.edit_toolbar = self.addToolBar(translations[globalLang]["edit"])
         self.edit_toolbar.setObjectName("Edit")
         self.toolbarCustomLabel(
             self.edit_toolbar,
-            translations[lang]["edit"] + ": ",
+            translations[globalLang]["edit"] + ": ",
         )
         self.edit_toolbar.addActions(
             [
@@ -814,16 +821,16 @@ class SS_Workbook(QMainWindow):
             ]
         )
 
-        self.interface_toolbar = self.addToolBar(translations[lang]["interface"])
+        self.interface_toolbar = self.addToolBar(translations[globalLang]["interface"])
         self.interface_toolbar.setObjectName("Interface")
         self.toolbarCustomLabel(
             self.interface_toolbar,
-            translations[lang]["interface"] + ": ",
+            translations[globalLang]["interface"] + ": ",
         )
 
         self.theme_action = self.createAction(
-            translations[lang]["darklight"],
-            translations[lang]["darklight_message"],
+            translations[globalLang]["darklight"],
+            translations[globalLang]["darklight_message"],
             self.themeAction,
             QKeySequence("Ctrl+Shift+T"),
             "",
@@ -833,11 +840,13 @@ class SS_Workbook(QMainWindow):
         self.interface_toolbar.addAction(self.theme_action)
 
         self.powersaveraction = QAction(
-            translations[lang]["powersaver"],
+            translations[globalLang]["powersaver"],
             self,
             checkable=True,
         )
-        self.powersaveraction.setStatusTip(translations[lang]["powersaver_message"])
+        self.powersaveraction.setStatusTip(
+            translations[globalLang]["powersaver_message"]
+        )
         self.powersaveraction.toggled.connect(self.hybridSaver)
 
         adaptiveResponse = settings.value(
@@ -855,18 +864,18 @@ class SS_Workbook(QMainWindow):
 
         self.addToolBarBreak()
 
-        self.formula_toolbar = self.addToolBar(translations[lang]["formula"])
+        self.formula_toolbar = self.addToolBar(translations[globalLang]["formula"])
         self.formula_toolbar.setObjectName("Formula")
         self.toolbarCustomLabel(
             self.formula_toolbar,
-            translations[lang]["formula"] + ": ",
+            translations[globalLang]["formula"] + ": ",
         )
 
         self.formula_edit = QLineEdit()
-        self.formula_edit.setPlaceholderText(translations[lang]["formula"])
+        self.formula_edit.setPlaceholderText(translations[globalLang]["formula"])
         self.formula_edit.returnPressed.connect(self.computeFormula)
 
-        self.formula_button = QPushButton(translations[lang]["compute"])
+        self.formula_button = QPushButton(translations[globalLang]["compute"])
         self.formula_button.setStyleSheet(
             """
             QPushButton {
@@ -1024,7 +1033,7 @@ class SS_Workbook(QMainWindow):
             reply = QMessageBox.question(
                 self,
                 app.applicationDisplayName(),
-                translations[lang]["new_title"],
+                translations[globalLang]["new_title"],
                 QMessageBox.Yes | QMessageBox.No,
                 QMessageBox.No,
             )
@@ -1067,7 +1076,7 @@ class SS_Workbook(QMainWindow):
             reply = QMessageBox.question(
                 self,
                 app.applicationDisplayName(),
-                translations[lang]["open"],
+                translations[globalLang]["open"],
                 QMessageBox.Yes | QMessageBox.No,
                 QMessageBox.No,
             )
@@ -1080,7 +1089,7 @@ class SS_Workbook(QMainWindow):
         options = QFileDialog.Options()
         selected_file, _ = QFileDialog.getOpenFileName(
             self,
-            f"{translations[lang]['open_title']} — {app.applicationDisplayName()}",
+            f"{translations[globalLang]['open_title']} — {app.applicationDisplayName()}",
             self.directory,
             fallbackValues["readFilter"],
             options=options,
@@ -1167,7 +1176,7 @@ class SS_Workbook(QMainWindow):
         options = QFileDialog.Options()
         selected_file, _ = QFileDialog.getSaveFileName(
             self,
-            f"{translations[lang]['save_as_title']} — {app.applicationDisplayName()}",
+            f"{translations[globalLang]['save_as_title']} — {app.applicationDisplayName()}",
             self.directory,
             fallbackValues["writeFilter"],
             options=options,
@@ -1238,7 +1247,7 @@ class SS_Workbook(QMainWindow):
         selected_ranges = self.SpreadsheetArea.selectedRanges()
 
         if not selected_ranges:
-            QMessageBox.warning(self, None, translations[lang]["print_warning"])
+            QMessageBox.warning(self, None, translations[globalLang]["print_warning"])
             return
 
         printer = self.setupPrinter()
@@ -1296,9 +1305,9 @@ class SS_Workbook(QMainWindow):
         selected_cells = self.SpreadsheetArea.selectedRanges()
 
         if not selected_cells:
-            raise ValueError("ERROR: 0 cells.")
+            raise ValueError("ERROR: No cells selected.")
 
-        values = []
+        values = {"numerical": [], "text": []}
 
         for selected_range in selected_cells:
             for row in range(selected_range.topRow(), selected_range.bottomRow() + 1):
@@ -1306,14 +1315,15 @@ class SS_Workbook(QMainWindow):
                     selected_range.leftColumn(), selected_range.rightColumn() + 1
                 ):
                     item = self.SpreadsheetArea.item(row, col)
+
                     if item:
                         text = item.text().strip()
-                        if text.replace(".", "", 1).isdigit() and text.count(".") < 2:
-                            try:
-                                value = float(text)
-                                values.append(value)
-                            except ValueError:
-                                continue
+
+                        try:
+                            value = float(text)
+                            values["numerical"].append(value)
+                        except ValueError:
+                            values["text"].append(text)
 
         return values
 
@@ -1349,39 +1359,90 @@ class SS_Workbook(QMainWindow):
                 QMessageBox.warning(self, "Input Error", f"ERROR: {formula}")
                 return
 
-            operands = self.selectedCells()
-
-            if not operands:
-                QMessageBox.warning(self, "Input Error", "ERROR: No operands selected.")
-                return
+            selected_values = self.selectedCells()
+            numerical_operands = selected_values["numerical"]
+            text_operands = selected_values["text"]
+            print(len(selected_values["numerical"]))
 
             if formula == "sum":
-                result = sum(operands)
+                result = sum(numerical_operands)
             elif formula == "avg":
-                result = sum(operands) / len(operands)
+                result = sum(numerical_operands) / len(numerical_operands)
             elif formula == "count":
-                result = len(operands)
+                result = len(numerical_operands)
             elif formula == "max":
-                result = max(operands)
+                result = max(numerical_operands)
             elif formula == "min":
-                result = min(operands)
+                result = min(numerical_operands)
+            elif formula == "linearregression":
+                if len(numerical_operands) < 2:
+                    QMessageBox.warning(
+                        self,
+                        "Input Error",
+                        "ERROR: Not enough data points for linear regression.",
+                    )
+                    return
+
+                if len(numerical_operands) % 2 != 0:
+                    QMessageBox.warning(
+                        self, "Input Error", "ERROR: Odd number of data points."
+                    )
+                    return
+
+                x_values = numerical_operands[::2]
+                y_values = numerical_operands[1::2]
+
+                if len(x_values) != len(y_values):
+                    QMessageBox.warning(
+                        self, "Input Error", "ERROR: Unequal number of X and Y values."
+                    )
+                    return
+
+                df = pd.DataFrame({"X": x_values, "Y": y_values})
+
+                df["X"] = pd.to_numeric(df["X"], errors="coerce")
+                df["Y"] = pd.to_numeric(df["Y"], errors="coerce")
+
+                df = df.dropna()
+
+                if len(df) < 2:
+                    QMessageBox.warning(
+                        self,
+                        "Input Error",
+                        "ERROR: Insufficient valid data points for regression.",
+                    )
+                    return
+
+                X = df["X"]
+                Y = df["Y"]
+
+                X = sm.add_constant(X)
+
+                model = sm.OLS(Y, X)
+                results = model.fit()
+
+                slope = results.params.iloc[1]
+                intercept = results.params.iloc[0]
+
+                result = f"y = {slope:.2f} x + {intercept:.2f}"
+
             elif formula in graphformulas:
                 start_elapsed = datetime.datetime.now()
                 pltgraph = plt.figure()
                 pltgraph.suptitle(graphformulas[formula])
-                x_label, y_label = self.getGraphLabels(formula, operands)
+                x_label, y_label = self.getGraphLabels(formula, numerical_operands)
 
                 if formula == "similargraph":
-                    plt.plot(operands)
+                    plt.plot(numerical_operands)
                 elif formula == "pointgraph":
-                    plt.plot(operands, "o")
+                    plt.plot(numerical_operands, "o")
                 elif formula == "bargraph":
-                    plt.bar(range(len(operands)), operands)
+                    plt.bar(range(len(numerical_operands)), numerical_operands)
                 elif formula == "piegraph":
-                    plt.pie(operands)
+                    plt.pie(numerical_operands)
                     y_label = "Percentage"
                 elif formula == "histogram":
-                    plt.hist(operands)
+                    plt.hist(numerical_operands)
                     y_label = "Frequency"
 
                 plt.xlabel(x_label)
@@ -1587,8 +1648,8 @@ if __name__ == "__main__":
     app.setWindowIcon(QIcon(os.path.join(applicationPath, fallbackValues["icon"])))
     app.setOrganizationName("berkaygediz")
     app.setApplicationName("SolidSheets")
-    app.setApplicationDisplayName("SolidSheets 2024.11")
-    app.setApplicationVersion("1.5.2024.11-1")
+    app.setApplicationDisplayName("SolidSheets 2025.01")
+    app.setApplicationVersion("1.5.2025.01-1")
     wb = SS_ControlInfo()
     wb.show()
     sys.exit(app.exec())
